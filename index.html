@@ -88,12 +88,7 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
 .produto-divider-line{flex:1;height:1px;background:var(--border);}
 .produto-divider-label{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text);white-space:nowrap;}
 .produto-divider-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;}
-@media(max-width:900px){
-  main{padding:16px;} .header-inner{padding:0 16px;} .nav-inner{padding:0 8px;}
-  .charts-grid,.charts-grid-2{grid-template-columns:1fr;}
-  .kpi-grid{grid-template-columns:repeat(2,1fr);}
-  .section-title{font-size:20px;} .brand-sub{display:none;}
-}
+/* mobile rules moved to comprehensive block below */
 
 /* SUMMARY TABLE */
 .table-section{margin-top:52px;margin-bottom:48px;}
@@ -122,6 +117,150 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
 .year-btn-header{padding:6px 14px;border:none;background:transparent;color:rgba(255,255,255,0.75);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:all 0.2s;}
 .year-btn-header:hover{color:white;background:rgba(255,255,255,0.12);}
 .year-btn-header.active{background:white !important;color:var(--red) !important;font-weight:600;}
+
+.mobile-section-bar { display: none; }
+
+/* Scroll offset for sticky header + nav */
+[id^="anchor_"] {
+  scroll-margin-top: 120px;
+}
+
+/* ═══════════════════════════════════════════════════
+   MOBILE — max-width: 768px
+   Desktop code is NOT touched above this block.
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── HEADER ─────────────────────────────────── */
+  header { position: sticky; top: 0; z-index: 100; }
+  .header-inner {
+    padding: 0 12px;
+    height: auto;
+    min-height: 52px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .brand-name { font-size: 16px; }
+  .brand-sub { display: none; }
+  .brand-logo { width: 28px; height: 28px; }
+  .brand-logo span { font-size: 14px; }
+
+  /* Year + Period toggles: stack them compactly */
+  .header-inner > div:last-child {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    align-items: flex-end !important;
+    flex-wrap: nowrap !important;
+  }
+  .year-toggle {
+    padding: 2px;
+    gap: 1px;
+  }
+  .year-btn-header {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  .period-toggle { padding: 2px; gap: 1px; }
+  .period-btn { padding: 4px 8px; font-size: 11px; }
+
+  /* ── MOBILE SECTION BAR (current section indicator) ── */
+  .mobile-section-bar {
+    display: block;
+    background: rgba(0,0,0,0.25);
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  #mobileSectionName { color: white; }
+
+  /* ── NAV BAR: hidden on mobile ──────────────── */
+  nav { display: none !important; }
+
+  /* ── MAIN CONTENT ───────────────────────────── */
+  main { padding: 14px 12px; }
+
+  /* Scroll offset on mobile — header is taller */
+  [id^="anchor_"] { scroll-margin-top: 140px; }
+
+  /* ── SECTION HEADER ─────────────────────────── */
+  .section-header { margin-bottom: 16px; padding-bottom: 12px; }
+  .section-title { font-size: 18px; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 9px; padding: 2px 7px; }
+
+  /* ── KPI + FUNNEL ROW: stack vertically ─────── */
+  .kpi-funnel-row { flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .kpi-grid-left {
+    flex: 1 1 auto;
+    width: 100%;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .funnel-card {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: unset;
+    padding: 16px 14px;
+  }
+  .kpi-card { padding: 10px 8px; border-radius: 8px; }
+  .kpi-value { font-size: 15px; }
+  .kpi-label { font-size: 9px; letter-spacing: 0.04em; }
+  .kpi-sub { font-size: 9px; margin-top: 2px; }
+
+  /* ── CHARTS: single column ───────────────────── */
+  .charts-grid,
+  .charts-grid-2 { grid-template-columns: 1fr !important; gap: 14px; margin-bottom: 14px; }
+  .chart-card { padding: 16px 12px; border-radius: 12px; }
+  .chart-title { font-size: 13px; }
+  .chart-subtitle { font-size: 10px; margin-bottom: 12px; }
+  .chart-wrap { height: 230px; }
+  .chart-wrap-sm { height: 190px; }
+
+  /* ── PRODUCT DIVIDER ─────────────────────────── */
+  .produto-divider { margin: 32px 0 18px; }
+  .produto-divider-label { font-size: 16px; }
+
+  /* ── SUMMARY TABLE ───────────────────────────── */
+  .table-section { margin-top: 32px; margin-bottom: 32px; }
+  .table-section-title { font-size: 18px; }
+  .table-title-row { margin-bottom: 12px; padding-bottom: 12px; }
+
+  /* Table scroll container — allow horizontal swipe */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+  .summary-table { font-size: 10.5px; }
+  .th-name { padding: 8px 10px; font-size: 9px; min-width: 120px; }
+  .th-val  { padding: 8px 8px;  font-size: 9px; }
+  .td-name { padding: 8px 10px; font-size: 11px; min-width: 120px; }
+  .td-val  { padding: 8px 8px; }
+
+  /* Sticky first column on mobile — ensure it has explicit bg */
+  .td-sticky, .th-sticky {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 3 !important;
+  }
+  .th-sticky { background: var(--red) !important; z-index: 4 !important; }
+  .tr-even .td-sticky  { background: white !important; }
+  .tr-odd  .td-sticky  { background: #FAFAFA !important; }
+  .tr-geral .td-sticky { background: #FFF5F6 !important; }
+  /* Shadow to show it's sticky */
+  .td-sticky::after, .th-sticky::after {
+    content: '';
+    position: absolute;
+    top: 0; right: -6px;
+    width: 6px; height: 100%;
+    background: linear-gradient(to right, rgba(0,0,0,0.06), transparent);
+    pointer-events: none;
+  }
+}
 </style>
 </head>
 <body>
@@ -148,7 +287,7 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
       </div>
     </div>
   </div>
-</header>
+<div class="mobile-section-bar" id="mobileSectionBar"><span id="mobileSectionName">Visão Geral</span></div></header>
 <nav>
   <div class="nav-inner" id="navInner">
     <button class="nav-btn active" id="navbtn_geral" onclick="scrollToSection('geral',this)">Geral</button>
@@ -727,6 +866,24 @@ function scrollToSection(id, btn) {
         if (!activeBtn && current === 'geral') activeBtn = document.querySelector('.nav-btn');
         if (activeBtn) {
           activeBtn.classList.add('active');
+        }
+        // Update mobile section bar
+        var mbar = document.getElementById('mobileSectionName');
+        if (mbar) {
+          var label = 'Visão Geral';
+          if (current !== 'geral') {
+            // Try nav button text first
+            var navBtn = document.getElementById('navbtn_' + current);
+            if (navBtn) {
+              label = navBtn.textContent;
+            } else {
+              // Fallback: find the produto-divider-label for this anchor
+              var divLabel = document.querySelector('#anchor_' + current + ' .produto-divider-label');
+              if (divLabel) label = divLabel.textContent;
+              else label = current.replace(/_/g, ' ');
+            }
+          }
+          mbar.textContent = label;
         }
       }
     });
