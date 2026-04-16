@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lindenberg — Revenue Board</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#C8102E; --red-dark:#8B0C1F; --red-light:#E8374F;
+  --red-muted:rgba(200,16,46,0.12); --white:#FFFFFF; --off-white:#FAF8F7;
+  --gray-light:#F0EDEC; --gray:#C4B8B5; --gray-dark:#7A6E6C;
+  --text:#1A1210; --text-light:#5C4F4D;
+  --border:rgba(200,16,46,0.18); --shadow:0 2px 24px rgba(26,18,16,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);}
+header{background:var(--red);color:white;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.25);}
+.header-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand-logo{width:36px;height:36px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.brand-logo span{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--red);line-height:1;}
+.brand-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:0.04em;color:white;}
+.brand-sub{font-size:11px;font-weight:400;opacity:0.7;letter-spacing:0.08em;text-transform:uppercase;color:white;}
+.period-toggle{display:flex;background:rgba(255,255,255,0.15);border-radius:8px;padding:3px;gap:2px;}
+.period-btn{padding:6px 16px;border:none;background:transparent;color:rgba(255,255,255,0.75);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.period-btn:hover{color:white;background:rgba(255,255,255,0.12);}
+.period-btn.active{background:white;color:var(--red);font-weight:600;}
+nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:64px;z-index:99;box-shadow:0 2px 8px rgba(26,18,16,0.06);}
+nav::-webkit-scrollbar{display:none;}
+.nav-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;gap:0;flex-wrap:wrap;}
+.nav-btn{padding:14px 20px;border:none;background:transparent;color:var(--text-light);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all 0.2s;}
+.nav-btn:hover{color:var(--red);}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+main{max-width:1400px;margin:0 auto;padding:32px;}
+.section{display:none;}
+.section.active{display:block;}
+.section-header{margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:12px;}
+.tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;background:var(--red);color:white;padding:3px 10px;border-radius:4px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+
+.kpi-funnel-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:28px;}
+.kpi-grid-left{flex:0 0 70%;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:0;}
+.funnel-card{flex:0 0 calc(30% - 20px);background:white;border-radius:14px;padding:22px 18px;box-shadow:var(--shadow);min-width:220px;overflow:hidden;}
+.funnel-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:0.01em;}
+.funnel-wrap{display:flex;flex-direction:column;gap:2px;width:100%;}
+.funnel-step{width:100%;margin:3px 0;box-sizing:border-box;transition:padding-right 0.7s ease;}
+.funnel-bar-inner{border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:2px;min-width:60px;width:100%;}
+.fbar-leads{padding-right:0;}
+.fbar-leads .funnel-bar-inner{background:var(--red);}
+.fbar-visitas .funnel-bar-inner{background:rgba(140,8,22,0.78);}
+.fbar-vendas .funnel-bar-inner{background:rgba(80,3,10,0.88);}
+.funnel-num{color:white;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;line-height:1;white-space:nowrap;}
+.funnel-lbl{color:rgba(255,255,255,0.9);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;white-space:nowrap;}
+.funnel-arrow-row{display:flex;align-items:center;gap:8px;padding:2px 0 2px 8px;}
+.funnel-rate{font-size:13px;font-weight:700;color:var(--red);white-space:nowrap;}
+.funnel-rate-lbl{font-size:10px;color:var(--gray-dark);white-space:nowrap;}
+.funnel-conv-row{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.funnel-conv-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--red);}
+.funnel-conv-lbl{font-size:10px;color:var(--gray-dark);line-height:1.3;}
+@media(max-width:1100px){
+  .kpi-funnel-row{flex-direction:column;}
+  .kpi-grid-left{flex:1 1 auto;width:100%;grid-template-columns:repeat(3,1fr);}
+  .funnel-card{flex:1 1 auto;width:100%;}
+}
+@media(max-width:600px){
+  .kpi-grid-left{grid-template-columns:repeat(2,1fr);}
+}
+
+
+.kpi-card{background:white;border-radius:12px;padding:18px;box-shadow:var(--shadow);border-top:3px solid var(--red);}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-dark);margin-bottom:6px;}
+.kpi-value{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);line-height:1;}
+.kpi-value.red{color:var(--red);}
+.kpi-sub{font-size:11px;color:var(--gray-dark);margin-top:4px;}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:22px;margin-bottom:22px;}
+.charts-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:22px;margin-bottom:22px;}
+.chart-card{background:white;border-radius:14px;padding:24px;box-shadow:var(--shadow);}
+.chart-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.chart-subtitle{font-size:11px;color:var(--gray-dark);margin-bottom:18px;}
+.chart-wrap{position:relative;height:310px;}
+.chart-wrap-sm{position:relative;height:270px;}
+.produto-divider{display:flex;align-items:center;gap:16px;margin:44px 0 28px;}
+.produto-divider-line{flex:1;height:1px;background:var(--border);}
+.produto-divider-label{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text);white-space:nowrap;}
+.produto-divider-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;}
+@media(max-width:900px){
+  main{padding:16px;} .header-inner{padding:0 16px;} .nav-inner{padding:0 8px;}
+  .charts-grid,.charts-grid-2{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .section-title{font-size:20px;} .brand-sub{display:none;}
+}
+
+/* SUMMARY TABLE */
+.table-section{margin-top:52px;margin-bottom:48px;}
+.table-title-row{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:2px solid var(--border);flex-wrap:wrap;}
+.table-section-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);flex:1;}
+.table-scroll{overflow-x:auto;border-radius:14px;box-shadow:0 2px 24px rgba(26,18,16,0.08);}
+.summary-table{width:100%;border-collapse:separate;border-spacing:0;background:white;border-radius:14px;overflow:hidden;font-size:11.5px;}
+.summary-table thead tr{background:var(--red);}
+.th-name{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.9);white-space:nowrap;min-width:150px;}
+.th-val{padding:10px 12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.9);white-space:nowrap;}
+.th-sticky{position:sticky;left:0;z-index:3;background:var(--red);}
+.tr-geral td{background:#FFF5F6;font-weight:700;border-bottom:2px solid var(--red);}
+.tr-even td{background:white;}
+.tr-odd td{background:#FAFAFA;}
+.summary-table tbody tr:hover td{background:rgba(200,16,46,0.05);transition:background 0.15s;}
+.summary-table tbody tr:hover td.td-sticky{position:sticky;left:0;z-index:2;box-shadow:2px 0 6px rgba(0,0,0,0.07);}
+.td-name{padding:9px 14px;color:var(--text);font-weight:500;white-space:nowrap;border-bottom:1px solid var(--gray-light);font-size:12px;}
+.td-val{padding:9px 12px;text-align:right;color:var(--text-light);border-bottom:1px solid var(--gray-light);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.tr-geral .td-val{color:var(--red-dark);}
+.td-sticky{position:sticky;left:0;z-index:2;box-shadow:2px 0 6px rgba(0,0,0,0.07);}
+.tr-even .td-sticky{background:white;}
+.tr-odd .td-sticky{background:#FAFAFA;}
+.tr-geral .td-sticky{background:#FFF5F6;}
+.badge-geral{display:inline-block;background:var(--red);color:white;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;}
+.year-toggle{display:flex;background:rgba(255,255,255,0.15);border-radius:8px;padding:3px;gap:2px;}
+.year-btn-header{padding:6px 14px;border:none;background:transparent;color:rgba(255,255,255,0.75);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.year-btn-header:hover{color:white;background:rgba(255,255,255,0.12);}
+.year-btn-header.active{background:white !important;color:var(--red) !important;font-weight:600;}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo"><span>L</span></div>
+      <div>
+        <div class="brand-name">Lindenberg</div>
+        <div class="brand-sub">Revenue Board</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="year-toggle" style="background:rgba(255,255,255,0.15);">
+        <button class="year-btn year-btn-header" id="hbtn_0" onclick="setGlobalYear(0,this)">Todos</button>
+        <button class="year-btn year-btn-header" id="hbtn_2024" onclick="setGlobalYear(2024,this)">2024</button>
+        <button class="year-btn year-btn-header" id="hbtn_2025" onclick="setGlobalYear(2025,this)">2025</button>
+        <button class="year-btn year-btn-header active" id="hbtn_2026" onclick="setGlobalYear(2026,this)">2026</button>
+      </div>
+      <div class="period-toggle">
+        <button class="period-btn active" id="btn_mensal" onclick="setPeriod('mensal')">Mensal</button>
+        <button class="period-btn" id="btn_trimestral" onclick="setPeriod('trimestral')">Trimestral</button>
+        <button class="period-btn" id="btn_semestral" onclick="setPeriod('semestral')">Semestral</button>
+      </div>
+    </div>
+  </div>
+</header>
+<nav>
+  <div class="nav-inner" id="navInner">
+    <button class="nav-btn active" id="navbtn_geral" onclick="scrollToSection('geral',this)">Geral</button>
+  </div>
+</nav>
+<main id="mainContent"></main>
+
+<script>
+const DATA = [{"ano": 2024, "mes": "Abril", "produto": "Alto de Pinheiros", "midia_paga": 30520.219999999998, "leads": 134.0, "cpl": 227.7628358208955, "visitas": 0, "vendas": 1.0, "vgv": 4879000.0}, {"ano": 2024, "mes": "Abril", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Geral", "midia_paga": 257885.75, "leads": 1429.0, "cpl": 180.46588523442966, "visitas": 29.0, "vendas": 4.0, "vgv": 6837337.0}, {"ano": 2024, "mes": "Abril", "produto": "Groenlandia", "midia_paga": 38245.729999999996, "leads": 112.0, "cpl": 341.47973214285713, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Guarará", "midia_paga": 29024.83, "leads": 78.0, "cpl": 372.11320512820515, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Jota Residencial", "midia_paga": 13739.380000000001, "leads": 138.0, "cpl": 99.56072463768116, "visitas": 4.0, "vendas": 1.0, "vgv": 1237340.0}, {"ano": 2024, "mes": "Abril", "produto": "Jota Studio", "midia_paga": 6980.91, "leads": 84.0, "cpl": 83.10607142857143, "visitas": 0, "vendas": 2.0, "vgv": 720997.0}, {"ano": 2024, "mes": "Abril", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Praça Itaim", "midia_paga": 139367.88, "leads": 876.0, "cpl": 159.09575342465754, "visitas": 25.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Alto de Pinheiros", "midia_paga": 25643.11, "leads": 200.0, "cpl": 128.21555, "visitas": 3.0, "vendas": 1.0, "vgv": 4053000.0}, {"ano": 2024, "mes": "Agosto", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Geral", "midia_paga": 290281.16000000003, "leads": 1859.0, "cpl": 156.14909090909092, "visitas": 23.0, "vendas": 5.0, "vgv": 14952250.0}, {"ano": 2024, "mes": "Agosto", "produto": "Groenlandia", "midia_paga": 43519.91, "leads": 227.0, "cpl": 191.7176651982379, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Guarará", "midia_paga": 26808.03, "leads": 97.0, "cpl": 276.37144329896904, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Jota Residencial", "midia_paga": 19942.2, "leads": 208.0, "cpl": 95.87596153846154, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Jota Studio", "midia_paga": 8343.68, "leads": 58.0, "cpl": 143.85655172413794, "visitas": 0, "vendas": 2.0, "vgv": 839250.0}, {"ano": 2024, "mes": "Agosto", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Praça Itaim", "midia_paga": 166024.22999999998, "leads": 1069.0, "cpl": 155.30797942001868, "visitas": 15.0, "vendas": 2.0, "vgv": 10060000.0}, {"ano": 2024, "mes": "Dezembro", "produto": "Alto de Pinheiros", "midia_paga": 20522.65, "leads": 98.0, "cpl": 209.41479591836736, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Cambuí", "midia_paga": 7135.66, "leads": 33.0, "cpl": 216.2321212121212, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Geral", "midia_paga": 291974.97, "leads": 1914.0, "cpl": 152.54700626959246, "visitas": 19.0, "vendas": 2.0, "vgv": 3749248.25}, {"ano": 2024, "mes": "Dezembro", "produto": "Groenlandia", "midia_paga": 26924.97, "leads": 157.0, "cpl": 171.49662420382165, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Guarará", "midia_paga": 6584.81, "leads": 40.0, "cpl": 164.62025, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Jota Residencial", "midia_paga": 9302.34, "leads": 111.0, "cpl": 83.80486486486487, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Jota Studio", "midia_paga": 5791.71, "leads": 69.0, "cpl": 83.93782608695652, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Mário Amaral", "midia_paga": 111832.98000000001, "leads": 811.0, "cpl": 137.89516646115908, "visitas": 6.0, "vendas": 2.0, "vgv": 3749248.25}, {"ano": 2024, "mes": "Dezembro", "produto": "Praça Itaim", "midia_paga": 103879.84999999999, "leads": 595.0, "cpl": 174.5879831932773, "visitas": 9.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Alto de Pinheiros", "midia_paga": 27827.52, "leads": 120.0, "cpl": 231.89600000000002, "visitas": 3.0, "vendas": 1.0, "vgv": 3840000.0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Geral", "midia_paga": 224921.71000000002, "leads": 1748.0, "cpl": 128.6737471395881, "visitas": 10.0, "vendas": 2.0, "vgv": 3840000.0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Groenlandia", "midia_paga": 42932.68, "leads": 183.0, "cpl": 234.6048087431694, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Guarará", "midia_paga": 25923.36, "leads": 208.0, "cpl": 124.63153846153847, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Jota Residencial", "midia_paga": 11821.8, "leads": 122.0, "cpl": 96.89999999999999, "visitas": 0, "vendas": 1.0, "vgv": 2000000.0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Jota Studio", "midia_paga": 7067.18, "leads": 83.0, "cpl": 85.14674698795181, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Praça Itaim", "midia_paga": 101631.23, "leads": 1032.0, "cpl": 98.47987403100775, "visitas": 6.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Alto de Pinheiros", "midia_paga": 30057.519999999997, "leads": 209.0, "cpl": 143.8158851674641, "visitas": 6.0, "vendas": 1.0, "vgv": 8253352.0}, {"ano": 2024, "mes": "Janeiro", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Geral", "midia_paga": 168256.18, "leads": 1552.0, "cpl": 108.41248711340205, "visitas": 16.0, "vendas": 1.0, "vgv": 8253352.0}, {"ano": 2024, "mes": "Janeiro", "produto": "Groenlandia", "midia_paga": 19538.07, "leads": 106.0, "cpl": 184.3214150943396, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Guarará", "midia_paga": 10775.14, "leads": 62.0, "cpl": 173.79258064516128, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Jota Residencial", "midia_paga": 13471.24, "leads": 207.0, "cpl": 65.07845410628019, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Jota Studio", "midia_paga": 6633.75, "leads": 130.0, "cpl": 51.02884615384615, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Praça Itaim", "midia_paga": 76874.95, "leads": 838.0, "cpl": 91.73621718377088, "visitas": 8.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Alto de Pinheiros", "midia_paga": 16363.0, "leads": 249.0, "cpl": 65.714859437751, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Geral", "midia_paga": 214752.32, "leads": 1798.0, "cpl": 119.43955506117909, "visitas": 15.0, "vendas": 0.0, "vgv": 0.0}, {"ano": 2024, "mes": "Julho", "produto": "Groenlandia", "midia_paga": 25350.82, "leads": 207.0, "cpl": 122.46772946859903, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Guarará", "midia_paga": 19831.65, "leads": 84.0, "cpl": 236.09107142857144, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Jota Residencial", "midia_paga": 23841.66, "leads": 252.0, "cpl": 94.60976190476191, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Jota Studio", "midia_paga": 15656.32, "leads": 131.0, "cpl": 119.51389312977099, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Praça Itaim", "midia_paga": 113708.87, "leads": 875.0, "cpl": 129.95299428571428, "visitas": 13.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Alto de Pinheiros", "midia_paga": 18061.92, "leads": 169.0, "cpl": 106.87526627218934, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Geral", "midia_paga": 229530.14999999997, "leads": 1470.0, "cpl": 156.14295918367344, "visitas": 19.0, "vendas": 2.0, "vgv": 8836000.0}, {"ano": 2024, "mes": "Junho", "produto": "Groenlandia", "midia_paga": 40421.88, "leads": 162.0, "cpl": 249.51777777777775, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Guarará", "midia_paga": 21782.43, "leads": 78.0, "cpl": 279.2619230769231, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Jota Residencial", "midia_paga": 26906.72, "leads": 267.0, "cpl": 100.77423220973783, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Jota Studio", "midia_paga": 12245.89, "leads": 109.0, "cpl": 112.34761467889908, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Praça Itaim", "midia_paga": 110111.31, "leads": 706.0, "cpl": 155.9650283286119, "visitas": 19.0, "vendas": 2.0, "vgv": 8836000.0}, {"ano": 2024, "mes": "Maio", "produto": "Alto de Pinheiros", "midia_paga": 23195.04, "leads": 184.0, "cpl": 126.06, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Geral", "midia_paga": 215281.01, "leads": 1237.0, "cpl": 174.03476960388036, "visitas": 14.0, "vendas": 0.0, "vgv": 0.0}, {"ano": 2024, "mes": "Maio", "produto": "Groenlandia", "midia_paga": 42122.19, "leads": 144.0, "cpl": 292.51520833333336, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Guarará", "midia_paga": 8283.64, "leads": 26.0, "cpl": 318.60153846153844, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Jota Residencial", "midia_paga": 10259.35, "leads": 129.0, "cpl": 79.52984496124031, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Jota Studio", "midia_paga": 6807.71, "leads": 54.0, "cpl": 126.0687037037037, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Praça Itaim", "midia_paga": 124613.07999999999, "leads": 700.0, "cpl": 178.0186857142857, "visitas": 13.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Alto de Pinheiros", "midia_paga": 28799.190000000002, "leads": 138.0, "cpl": 208.68978260869568, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Geral", "midia_paga": 319588.41000000003, "leads": 2113.0, "cpl": 151.24865593942263, "visitas": 18.0, "vendas": 4.0, "vgv": 3650000.0}, {"ano": 2024, "mes": "Março", "produto": "Groenlandia", "midia_paga": 47391.119999999995, "leads": 163.0, "cpl": 290.74306748466256, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Guarará", "midia_paga": 29429.2, "leads": 116.0, "cpl": 253.70000000000002, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Jota Residencial", "midia_paga": 11965.04, "leads": 124.0, "cpl": 96.49225806451614, "visitas": 0, "vendas": 2.0, "vgv": 3650000.0}, {"ano": 2024, "mes": "Março", "produto": "Jota Studio", "midia_paga": 6475.68, "leads": 74.0, "cpl": 87.50918918918919, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Praça Itaim", "midia_paga": 195521.22, "leads": 1498.0, "cpl": 130.52150867823764, "visitas": 18.0, "vendas": 2.0, "vgv": 10553000.0}, {"ano": 2024, "mes": "Novembro", "produto": "Alto de Pinheiros", "midia_paga": 21119.64, "leads": 106.0, "cpl": 199.24188679245282, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Cambuí", "midia_paga": 16594.48, "leads": 94.0, "cpl": 176.53702127659574, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Geral", "midia_paga": 649689.8099999999, "leads": 3252.0, "cpl": 199.7816143911439, "visitas": 57.0, "vendas": 4.0, "vgv": 9908910.52}, {"ano": 2024, "mes": "Novembro", "produto": "Groenlandia", "midia_paga": 52936.649999999994, "leads": 218.0, "cpl": 242.8286697247706, "visitas": 8.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Guarará", "midia_paga": 14049.720000000001, "leads": 88.0, "cpl": 159.6559090909091, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Jota Residencial", "midia_paga": 9095.0, "leads": 100.0, "cpl": 90.95, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Jota Studio", "midia_paga": 5770.01, "leads": 55.0, "cpl": 104.90927272727274, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Lindenberg Institucional", "midia_paga": 1176.42, "leads": 14.0, "cpl": 84.03, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Mário Amaral", "midia_paga": 307422.32, "leads": 1405.0, "cpl": 218.80592170818505, "visitas": 40.0, "vendas": 4.0, "vgv": 9908910.52}, {"ano": 2024, "mes": "Novembro", "produto": "Praça Itaim", "midia_paga": 221525.56999999998, "leads": 1172.0, "cpl": 189.01499146757678, "visitas": 21.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Alto de Pinheiros", "midia_paga": 28403.89, "leads": 140.0, "cpl": 202.88492857142856, "visitas": 2.0, "vendas": 1.0, "vgv": 4560000.0}, {"ano": 2024, "mes": "Outubro", "produto": "Cambuí", "midia_paga": 9479.699999999999, "leads": 89.0, "cpl": 106.5134831460674, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Geral", "midia_paga": 513250.56999999995, "leads": 3046.0, "cpl": 168.49985883125407, "visitas": 39.0, "vendas": 2.0, "vgv": 8810000.0}, {"ano": 2024, "mes": "Outubro", "produto": "Groenlandia", "midia_paga": 57794.02, "leads": 202.0, "cpl": 286.1090099009901, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Guarará", "midia_paga": 31207.14, "leads": 83.0, "cpl": 375.98963855421687, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Jota Residencial", "midia_paga": 6278.969999999999, "leads": 65.0, "cpl": 96.59953846153846, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Jota Studio", "midia_paga": 5519.88, "leads": 75.0, "cpl": 73.5984, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Lindenberg Institucional", "midia_paga": 18540.91, "leads": 107.0, "cpl": 173.27953271028036, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Mário Amaral", "midia_paga": 60290.9, "leads": 325.0, "cpl": 185.51046153846156, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Praça Itaim", "midia_paga": 295735.16, "leads": 1960.0, "cpl": 150.88528571428571, "visitas": 22.0, "vendas": 1.0, "vgv": 4250000.0}, {"ano": 2024, "mes": "Setembro", "produto": "Alto de Pinheiros", "midia_paga": 34027.12, "leads": 201.0, "cpl": 169.28915422885572, "visitas": 2.0, "vendas": 1.0, "vgv": 4200000.0}, {"ano": 2024, "mes": "Setembro", "produto": "Cambuí", "midia_paga": 6023.94, "leads": 61.0, "cpl": 98.75311475409835, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Geral", "midia_paga": 344757.16, "leads": 2135.0, "cpl": 161.47876346604215, "visitas": 30.0, "vendas": 1.0, "vgv": 4200000.0}, {"ano": 2024, "mes": "Setembro", "produto": "Groenlandia", "midia_paga": 25495.280000000002, "leads": 114.0, "cpl": 223.64280701754387, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Guarará", "midia_paga": 31256.54, "leads": 126.0, "cpl": 248.0677777777778, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Jota Residencial", "midia_paga": 16823.82, "leads": 89.0, "cpl": 189.0316853932584, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Jota Studio", "midia_paga": 5060.88, "leads": 47.0, "cpl": 107.67829787234042, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Lindenberg Institucional", "midia_paga": 10959.03, "leads": 49.0, "cpl": 223.65367346938777, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Praça Itaim", "midia_paga": 215110.55, "leads": 1448.0, "cpl": 148.55700966850827, "visitas": 25.0, "vendas": 0.0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Alto de Pinheiros", "midia_paga": 20871.53, "leads": 112.0, "cpl": 186.3529464285714, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Cambuí", "midia_paga": 8010.02, "leads": 47.0, "cpl": 170.42595744680852, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Geral", "midia_paga": 328591.16000000003, "leads": 1705.0, "cpl": 192.7220879765396, "visitas": 36.0, "vendas": 0.0, "vgv": 0.0}, {"ano": 2025, "mes": "Abril", "produto": "Groenlandia", "midia_paga": 19023.64, "leads": 104.0, "cpl": 182.91961538461538, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Guarará", "midia_paga": 12926.45, "leads": 87.0, "cpl": 148.57988505747127, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Jota Residencial", "midia_paga": 22930.05, "leads": 227.0, "cpl": 101.01343612334801, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Jota Studio", "midia_paga": 5546.83, "leads": 68.0, "cpl": 81.5710294117647, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Mário Amaral", "midia_paga": 99914.76000000001, "leads": 820.0, "cpl": 121.84726829268294, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Praça Itaim", "midia_paga": 36488.68, "leads": 240.0, "cpl": 152.03616666666667, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Alto de Pinheiros", "midia_paga": 67939.22, "leads": 342.0, "cpl": 198.65269005847952, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Geral", "midia_paga": 457121.7400000001, "leads": 3352.0, "cpl": 136.3728341288783, "visitas": 52.0, "vendas": 4.0, "vgv": 28545930.0}, {"ano": 2025, "mes": "Agosto", "produto": "Groenlandia", "midia_paga": 9596.1, "leads": 60.0, "cpl": 159.935, "visitas": 2.0, "vendas": 1.0, "vgv": 18000000.0}, {"ano": 2025, "mes": "Agosto", "produto": "Guarará", "midia_paga": 38058.36, "leads": 208.0, "cpl": 182.97288461538463, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Jota Residencial", "midia_paga": 44116.54, "leads": 387.0, "cpl": 113.99622739018088, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Jota Studio", "midia_paga": 6741.49, "leads": 63.0, "cpl": 107.00777777777778, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Lindenberg Institucional", "midia_paga": 12644.96, "leads": 220.0, "cpl": 57.477090909090904, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Mário Amaral", "midia_paga": 58955.69, "leads": 558.0, "cpl": 105.65535842293907, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Praça Itaim", "midia_paga": 45113.71000000001, "leads": 344.0, "cpl": 131.14450581395351, "visitas": 15.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Studios Paraíso", "midia_paga": 33445.58, "leads": 352.0, "cpl": 95.01585227272727, "visitas": 0, "vendas": 1.0, "vgv": 485930.0}, {"ano": 2025, "mes": "Agosto", "produto": "Vista Alto de Pinheiros", "midia_paga": 19599.57, "leads": 93.0, "cpl": 210.74806451612903, "visitas": 14.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Alto de Pinheiros", "midia_paga": 37471.21, "leads": 195.0, "cpl": 192.16005128205128, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Geral", "midia_paga": 525367.75, "leads": 2584.0, "cpl": 203.31569272445822, "visitas": 26.0, "vendas": 3.0, "vgv": 11920748.0}, {"ano": 2025, "mes": "Dezembro", "produto": "Groenlandia", "midia_paga": 243.52, "leads": 1.0, "cpl": 243.52, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Guarará", "midia_paga": 55159.07, "leads": 292.0, "cpl": 188.90092465753423, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Jota Residencial", "midia_paga": 33926.159999999996, "leads": 195.0, "cpl": 173.98030769230766, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Jota Studio", "midia_paga": 3437.1400000000003, "leads": 29.0, "cpl": 118.52206896551725, "visitas": 0, "vendas": 1.0, "vgv": 409000.0}, {"ano": 2025, "mes": "Dezembro", "produto": "Lindenberg Institucional", "midia_paga": 25405.0, "leads": 177.0, "cpl": 143.5310734463277, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Lindenberg Moema", "midia_paga": 120752.72, "leads": 446.0, "cpl": 270.7460089686099, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Mário Amaral", "midia_paga": 49442.240000000005, "leads": 296.0, "cpl": 167.0345945945946, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Praça Itaim", "midia_paga": 64938.259999999995, "leads": 304.0, "cpl": 213.61269736842104, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Studios Paraíso", "midia_paga": 17641.57, "leads": 141.0, "cpl": 125.11751773049644, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Vista Alto de Pinheiros", "midia_paga": 78009.27, "leads": 217.0, "cpl": 359.4897235023042, "visitas": 5.0, "vendas": 2.0, "vgv": 11511748.0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Alto de Pinheiros", "midia_paga": 22084.59, "leads": 128.0, "cpl": 172.535859375, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Cambuí", "midia_paga": 7015.63, "leads": 59.0, "cpl": 118.90898305084745, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Geral", "midia_paga": 277911.77999999997, "leads": 2466.0, "cpl": 112.69739659367396, "visitas": 19.0, "vendas": 0.0, "vgv": 0.0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Groenlandia", "midia_paga": 14657.34, "leads": 97.0, "cpl": 151.10659793814432, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Guarará", "midia_paga": 16765.71, "leads": 83.0, "cpl": 201.99650602409636, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Jota Residencial", "midia_paga": 8898.220000000001, "leads": 125.0, "cpl": 71.18576000000002, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Jota Studio", "midia_paga": 4148.21, "leads": 80.0, "cpl": 51.852625, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Mário Amaral", "midia_paga": 102710.84999999999, "leads": 862.0, "cpl": 119.15411832946634, "visitas": 8.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Praça Itaim", "midia_paga": 26962.01, "leads": 230.0, "cpl": 117.2261304347826, "visitas": 11.0, "vendas": 2.0, "vgv": 11995000.0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Alto de Pinheiros", "midia_paga": 32596.29, "leads": 183.0, "cpl": 178.12180327868853, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Cambuí", "midia_paga": 7823.629999999999, "leads": 51.0, "cpl": 153.40450980392154, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Geral", "midia_paga": 260513.52000000002, "leads": 2274.0, "cpl": 114.56179419525067, "visitas": 17.0, "vendas": 1.0, "vgv": 5510000.8}, {"ano": 2025, "mes": "Janeiro", "produto": "Groenlandia", "midia_paga": 20479.260000000002, "leads": 123.0, "cpl": 166.49804878048784, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Guarará", "midia_paga": 7340.960000000001, "leads": 55.0, "cpl": 133.472, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Jota Residencial", "midia_paga": 7286.9800000000005, "leads": 142.0, "cpl": 51.316760563380285, "visitas": 0, "vendas": 1.0, "vgv": 2020000.0}, {"ano": 2025, "mes": "Janeiro", "produto": "Jota Studio", "midia_paga": 3729.87, "leads": 69.0, "cpl": 54.05608695652174, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Mário Amaral", "midia_paga": 104381.58, "leads": 813.0, "cpl": 128.39062730627307, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Praça Itaim", "midia_paga": 70207.3, "leads": 530.0, "cpl": 132.46660377358492, "visitas": 14.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Alto de Pinheiros", "midia_paga": 56896.7, "leads": 169.0, "cpl": 336.66686390532544, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Geral", "midia_paga": 337279.89999999997, "leads": 2462.0, "cpl": 136.99427294882207, "visitas": 27.0, "vendas": 1.0, "vgv": 1981431.6}, {"ano": 2025, "mes": "Julho", "produto": "Groenlandia", "midia_paga": 18532.11, "leads": 80.0, "cpl": 231.651375, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Guarará", "midia_paga": 19894.940000000002, "leads": 93.0, "cpl": 213.9240860215054, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Jota Residencial", "midia_paga": 22441.829999999998, "leads": 152.0, "cpl": 147.64361842105262, "visitas": 5.0, "vendas": 1.0, "vgv": 1981431.6}, {"ano": 2025, "mes": "Julho", "produto": "Jota Studio", "midia_paga": 6597.74, "leads": 93.0, "cpl": 70.94344086021505, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Mário Amaral", "midia_paga": 68637.76999999999, "leads": 650.0, "cpl": 105.59656923076922, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Praça Itaim", "midia_paga": 24171.21, "leads": 158.0, "cpl": 152.9823417721519, "visitas": 7.0, "vendas": 2.0, "vgv": 10168240.0}, {"ano": 2025, "mes": "Julho", "produto": "Studios Paraíso", "midia_paga": 30569.940000000002, "leads": 350.0, "cpl": 87.34268571428572, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Alto de Pinheiros", "midia_paga": 55816.7, "leads": 208.0, "cpl": 268.3495192307692, "visitas": 2.0, "vendas": 1.0, "vgv": 4300000.0}, {"ano": 2025, "mes": "Junho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Geral", "midia_paga": 330250.19, "leads": 2248.0, "cpl": 146.90844750889678, "visitas": 34.0, "vendas": 7.0, "vgv": 22299000.0}, {"ano": 2025, "mes": "Junho", "produto": "Groenlandia", "midia_paga": 21050.91, "leads": 86.0, "cpl": 244.77802325581396, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Guarará", "midia_paga": 18620.309999999998, "leads": 70.0, "cpl": 266.00442857142855, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Jota Residencial", "midia_paga": 20699.87, "leads": 220.0, "cpl": 94.09031818181818, "visitas": 2.0, "vendas": 1.0, "vgv": 1407000.0}, {"ano": 2025, "mes": "Junho", "produto": "Jota Studio", "midia_paga": 6005.9, "leads": 46.0, "cpl": 130.56304347826085, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Mário Amaral", "midia_paga": 69520.43, "leads": 646.0, "cpl": 107.61676470588235, "visitas": 4.0, "vendas": 2.0, "vgv": 7208000.0}, {"ano": 2025, "mes": "Junho", "produto": "Praça Itaim", "midia_paga": 35074.600000000006, "leads": 226.0, "cpl": 155.19734513274338, "visitas": 5.0, "vendas": 1.0, "vgv": 5806900.0}, {"ano": 2025, "mes": "Junho", "produto": "Studios Paraíso", "midia_paga": 28424.76, "leads": 266.0, "cpl": 106.86, "visitas": 0, "vendas": 1.0, "vgv": 548000.0}, {"ano": 2025, "mes": "Maio", "produto": "Alto de Pinheiros", "midia_paga": 59341.51, "leads": 233.0, "cpl": 254.68459227467812, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Geral", "midia_paga": 348177.85000000003, "leads": 2325.0, "cpl": 149.75391397849464, "visitas": 31.0, "vendas": 2.0, "vgv": 2582800.0}, {"ano": 2025, "mes": "Maio", "produto": "Groenlandia", "midia_paga": 19197.34, "leads": 92.0, "cpl": 208.6667391304348, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Guarará", "midia_paga": 14788.39, "leads": 74.0, "cpl": 199.8431081081081, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Jota Residencial", "midia_paga": 18522.4, "leads": 196.0, "cpl": 94.50204081632654, "visitas": 0, "vendas": 1.0, "vgv": 2055000.0}, {"ano": 2025, "mes": "Maio", "produto": "Jota Studio", "midia_paga": 5804.870000000001, "leads": 60.0, "cpl": 96.74783333333335, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Mário Amaral", "midia_paga": 92764.44, "leads": 822.0, "cpl": 112.85211678832117, "visitas": 12.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Praça Itaim", "midia_paga": 34923.68, "leads": 235.0, "cpl": 148.61140425531914, "visitas": 9.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Studios Paraíso", "midia_paga": 13145.819999999998, "leads": 148.0, "cpl": 88.82310810810809, "visitas": 0, "vendas": 1.0, "vgv": 527800.0}, {"ano": 2025, "mes": "Março", "produto": "Alto de Pinheiros", "midia_paga": 33893.75, "leads": 151.0, "cpl": 224.46192052980132, "visitas": 2.0, "vendas": 1.0, "vgv": 4009000.0}, {"ano": 2025, "mes": "Março", "produto": "Cambuí", "midia_paga": 9240.7, "leads": 73.0, "cpl": 126.58493150684933, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Geral", "midia_paga": 411490.24, "leads": 3118.0, "cpl": 131.97249518922385, "visitas": 52.0, "vendas": 4.0, "vgv": 29562000.0}, {"ano": 2025, "mes": "Março", "produto": "Groenlandia", "midia_paga": 16697.36, "leads": 87.0, "cpl": 191.92367816091954, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Guarará", "midia_paga": 24698.620000000003, "leads": 91.0, "cpl": 271.41340659340665, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Jota Residencial", "midia_paga": 14873.68, "leads": 207.0, "cpl": 71.85352657004832, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Jota Studio", "midia_paga": 6944.139999999999, "leads": 175.0, "cpl": 39.6808, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Mário Amaral", "midia_paga": 109620.76999999999, "leads": 836.0, "cpl": 131.12532296650716, "visitas": 23.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Praça Itaim", "midia_paga": 77210.95999999999, "leads": 472.0, "cpl": 163.58254237288133, "visitas": 13.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Alto de Pinheiros", "midia_paga": 42634.7, "leads": 226.0, "cpl": 188.64911504424776, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Geral", "midia_paga": 644104.7400000001, "leads": 3128.0, "cpl": 205.91583759590796, "visitas": 53.0, "vendas": 1.0, "vgv": 3502183.0}, {"ano": 2025, "mes": "Novembro", "produto": "Groenlandia", "midia_paga": 4277.37, "leads": 23.0, "cpl": 185.97260869565216, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Guarará", "midia_paga": 55837.32, "leads": 242.0, "cpl": 230.73272727272726, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Jota Residencial", "midia_paga": 46948.66, "leads": 278.0, "cpl": 168.88007194244605, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Jota Studio", "midia_paga": 6457.780000000001, "leads": 55.0, "cpl": 117.41418181818183, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Lindenberg Institucional", "midia_paga": 35038.98, "leads": 239.0, "cpl": 146.60661087866112, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Lindenberg Moema", "midia_paga": 131646.52000000002, "leads": 397.0, "cpl": 331.60332493702776, "visitas": 10.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Mário Amaral", "midia_paga": 32183.440000000002, "leads": 223.0, "cpl": 144.32035874439464, "visitas": 2.0, "vendas": 1.0, "vgv": 3502183.0}, {"ano": 2025, "mes": "Novembro", "produto": "Praça Itaim", "midia_paga": 65028.09, "leads": 288.0, "cpl": 225.79197916666666, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Studios Paraíso", "midia_paga": 13590.38, "leads": 121.0, "cpl": 112.31719008264461, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Vista Alto de Pinheiros", "midia_paga": 53964.020000000004, "leads": 152.0, "cpl": 355.0264473684211, "visitas": 9.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Alto de Pinheiros", "midia_paga": 43403.9, "leads": 239.0, "cpl": 181.60627615062762, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Geral", "midia_paga": 634534.05, "leads": 4156.0, "cpl": 152.6790303176131, "visitas": 33.0, "vendas": 2.0, "vgv": 8624000.0}, {"ano": 2025, "mes": "Outubro", "produto": "Groenlandia", "midia_paga": 3813.7, "leads": 26.0, "cpl": 146.68076923076922, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Guarará", "midia_paga": 47778.1, "leads": 244.0, "cpl": 195.81188524590164, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Jota Residencial", "midia_paga": 41501.83, "leads": 386.0, "cpl": 107.51769430051814, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Jota Studio", "midia_paga": 6630.66, "leads": 73.0, "cpl": 90.8309589041096, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Lindenberg Institucional", "midia_paga": 22432.44, "leads": 238.0, "cpl": 94.25394957983193, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Lindenberg Moema", "midia_paga": 18130.91, "leads": 30.0, "cpl": 604.3636666666666, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Mário Amaral", "midia_paga": 40778.36, "leads": 407.0, "cpl": 100.19253071253071, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Praça Itaim", "midia_paga": 85634.79000000001, "leads": 638.0, "cpl": 134.22380877742947, "visitas": 12.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Studios Paraíso", "midia_paga": 19972.28, "leads": 230.0, "cpl": 86.836, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Vista Alto de Pinheiros", "midia_paga": 94356.71, "leads": 323.0, "cpl": 292.1260371517028, "visitas": 6.0, "vendas": 1.0, "vgv": 4374000.0}, {"ano": 2025, "mes": "Setembro", "produto": "Alto de Pinheiros", "midia_paga": 54554.4, "leads": 431.0, "cpl": 126.57633410672854, "visitas": 0, "vendas": 1.0, "vgv": 4330000.0}, {"ano": 2025, "mes": "Setembro", "produto": "Geral", "midia_paga": 545820.32, "leads": 4341.0, "cpl": 125.73607924441372, "visitas": 54.0, "vendas": 1.0, "vgv": 4330000.0}, {"ano": 2025, "mes": "Setembro", "produto": "Groenlandia", "midia_paga": 4460.32, "leads": 30.0, "cpl": 148.67733333333334, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Guarará", "midia_paga": 48072.740000000005, "leads": 446.0, "cpl": 107.78641255605382, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Jota Residencial", "midia_paga": 43041.99, "leads": 544.0, "cpl": 79.12130514705882, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Jota Studio", "midia_paga": 6447.73, "leads": 73.0, "cpl": 88.32506849315068, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Lindenberg Institucional", "midia_paga": 9877.29, "leads": 106.0, "cpl": 93.18198113207548, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Mário Amaral", "midia_paga": 47600.68, "leads": 577.0, "cpl": 82.49684575389948, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Praça Itaim", "midia_paga": 45677.14, "leads": 354.0, "cpl": 129.03146892655366, "visitas": 10.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Studios Paraíso", "midia_paga": 25752.05, "leads": 281.0, "cpl": 91.64430604982206, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Vista Alto de Pinheiros", "midia_paga": 90902.57, "leads": 405.0, "cpl": 224.4507901234568, "visitas": 19.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Geral", "midia_paga": 117811.57999999999, "leads": 837.0, "cpl": 140.75457586618876, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Guarará", "midia_paga": 13193.0, "leads": 211.0, "cpl": 62.5260663507109, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Jota Residencial", "midia_paga": 10562.5, "leads": 105.0, "cpl": 100.5952380952381, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Jota Studio", "midia_paga": 1032.56, "leads": 10.0, "cpl": 103.256, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Lindenberg Moema", "midia_paga": 41286.86, "leads": 216.0, "cpl": 191.14287037037036, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Mário Amaral", "midia_paga": 1831.01, "leads": 26.0, "cpl": 70.42346153846154, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Praça Itaim", "midia_paga": 18741.120000000003, "leads": 149.0, "cpl": 125.77932885906041, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Studios Paraíso", "midia_paga": 550.71, "leads": 13.0, "cpl": 42.362307692307695, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Vista Alto de Pinheiros", "midia_paga": 30613.82, "leads": 107.0, "cpl": 286.1104672897196, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Geral", "midia_paga": 281796.71, "leads": 2008.0, "cpl": 140.33700697211157, "visitas": 30.0, "vendas": 5.0, "vgv": 16453003.0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Guarará", "midia_paga": 21741.36, "leads": 235.0, "cpl": 92.51642553191489, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Jota Residencial", "midia_paga": 34722.21, "leads": 330.0, "cpl": 105.21881818181818, "visitas": 15.0, "vendas": 3.0, "vgv": 6033003.0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Jota Studio", "midia_paga": 2698.61, "leads": 30.0, "cpl": 89.95366666666668, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Lindenberg Institucional", "midia_paga": 21288.51, "leads": 182.0, "cpl": 116.96983516483516, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Lindenberg Moema", "midia_paga": 53306.43, "leads": 265.0, "cpl": 201.1563396226415, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Mário Amaral", "midia_paga": 16077.710000000003, "leads": 201.0, "cpl": 79.98860696517414, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Praça Itaim", "midia_paga": 85356.82, "leads": 543.0, "cpl": 157.1948802946593, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Studios Paraíso", "midia_paga": 5371.9, "leads": 86.0, "cpl": 62.46395348837209, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Vista Alto de Pinheiros", "midia_paga": 41233.159999999996, "leads": 136.0, "cpl": 303.18499999999995, "visitas": 7.0, "vendas": 2.0, "vgv": 10420000.0}, {"ano": 2026, "mes": "Janeiro", "produto": "Alto de Pinheiros", "midia_paga": 12116.51, "leads": 84.0, "cpl": 144.24416666666667, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Geral", "midia_paga": 399680.30999999994, "leads": 2529.0, "cpl": 158.0388730723606, "visitas": 22.0, "vendas": 2.0, "vgv": 11850000.0}, {"ano": 2026, "mes": "Janeiro", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Guarará", "midia_paga": 33497.84, "leads": 342.0, "cpl": 97.94690058479532, "visitas": 2.0, "vendas": 1.0, "vgv": 6500000.0}, {"ano": 2026, "mes": "Janeiro", "produto": "Jota Residencial", "midia_paga": 48049.29, "leads": 386.0, "cpl": 124.48002590673575, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Jota Studio", "midia_paga": 3158.46, "leads": 32.0, "cpl": 98.701875, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Lindenberg Institucional", "midia_paga": 27877.47, "leads": 177.0, "cpl": 157.4998305084746, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Lindenberg Moema", "midia_paga": 86772.67, "leads": 393.0, "cpl": 220.79559796437658, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Mário Amaral", "midia_paga": 33529.549999999996, "leads": 272.0, "cpl": 123.27040441176469, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Praça Itaim", "midia_paga": 90811.61, "leads": 508.0, "cpl": 178.76301181102363, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Studios Paraíso", "midia_paga": 13617.44, "leads": 182.0, "cpl": 74.8210989010989, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Vista Alto de Pinheiros", "midia_paga": 50249.47, "leads": 153.0, "cpl": 328.427908496732, "visitas": 7.0, "vendas": 1.0, "vgv": 5350000.0}, {"ano": 2026, "mes": "Março", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Geral", "midia_paga": 323092.45, "leads": 2562.0, "cpl": 126.10946526151444, "visitas": 30.0, "vendas": 3.0, "vgv": 13567458.0}, {"ano": 2026, "mes": "Março", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Guarará", "midia_paga": 25908.870000000003, "leads": 376.0, "cpl": 68.90656914893617, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Jota Residencial", "midia_paga": 41797.24999999999, "leads": 408.0, "cpl": 102.44424019607841, "visitas": 7.0, "vendas": 1.0, "vgv": 2000000.0}, {"ano": 2026, "mes": "Março", "produto": "Jota Studio", "midia_paga": 1961.8799999999999, "leads": 29.0, "cpl": 67.65103448275862, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Lindenberg Moema", "midia_paga": 84503.3, "leads": 434.0, "cpl": 194.70806451612904, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Mário Amaral", "midia_paga": 21965.14, "leads": 259.0, "cpl": 84.80749034749034, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Praça Itaim", "midia_paga": 89199.58, "leads": 777.0, "cpl": 114.79997425997426, "visitas": 12.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Studios Paraíso", "midia_paga": 7324.75, "leads": 93.0, "cpl": 78.76075268817205, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Vista Alto de Pinheiros", "midia_paga": 50431.68, "leads": 186.0, "cpl": 271.138064516129, "visitas": 6.0, "vendas": 2.0, "vgv": 11567458.0}];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VENDAS EXTERNAS — Vendas de empreendimentos externos geradas pelos nossos leads
+// Somam ao VGV e Vendas do GERAL, mas NÃO aos empreendimentos individuais.
+//
+// Para adicionar novos registros, copie o formato abaixo:
+// { ano: AAAA, mes: 'NomeDoMes', vendas: N, vgv: VALOR, descricao: 'Texto livre' }
+// ═══════════════════════════════════════════════════════════════════════════
+const EXTERNAL_SALES = [
+  { ano: 2025, mes: 'Janeiro',  vendas: 1, vgv: 3490000.80,  descricao: 'Empreendimento externo via leads' },
+  { ano: 2025, mes: 'Março',    vendas: 1, vgv: 15000000.00, descricao: 'Empreendimento externo via leads' },
+];
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MES_ORDER = {Janeiro:1,Fevereiro:2,Março:3,Abril:4,Maio:5,Junho:6,Julho:7,Agosto:8,Setembro:9,Outubro:10,Novembro:11,Dezembro:12};
+let currentPeriod = 'mensal';
+let globalYear = 2026;
+let charts = {};
+
+const CR = '#C8102E';
+const CT = '#1D6A72';
+const CA = '#C97825';
+const CD = '#1A1210';
+
+function getProducts() {
+  return [...new Set(DATA.map(d => d.produto).filter(p => p && p !== 'Geral'))].sort();
+}
+
+function getGeralRows(yearFilter) {
+  // Build synthetic geral by summing all product rows per ano+mes
+  var map = {};
+  DATA.forEach(function(r) {
+    if (!r.produto || r.produto === 'Geral') return;
+    if (yearFilter && r.ano !== yearFilter) return;
+    var key = r.ano + '_' + r.mes;
+    if (!map[key]) map[key] = {ano:r.ano, mes:r.mes, produto:'Geral', midia_paga:0, leads:0, cpl:0, visitas:0, vendas:0, vgv:0, vgv_externo:0};
+    map[key].midia_paga += r.midia_paga;
+    map[key].leads      += r.leads;
+    map[key].visitas    += r.visitas;
+    map[key].vendas     += r.vendas;
+    map[key].vgv        += r.vgv;
+  });
+  // Add external sales (VGV + vendas only, no midia/leads cost)
+  EXTERNAL_SALES.forEach(function(s) {
+    if (yearFilter && s.ano !== yearFilter) return;
+    var key = s.ano + '_' + s.mes;
+    if (!map[key]) map[key] = {ano:s.ano, mes:s.mes, produto:'Geral', midia_paga:0, leads:0, cpl:0, visitas:0, vendas:0, vgv:0, vgv_externo:0};
+    map[key].vendas      += s.vendas;
+    map[key].vgv         += s.vgv;
+    map[key].vgv_externo += s.vgv;
+  });
+  // recalculate cpl from sums
+  Object.values(map).forEach(function(r){ r.cpl = r.leads>0 ? r.midia_paga/r.leads : 0; });
+  return Object.values(map);
+}
+
+function getRows(produto) {
+  return DATA.filter(d => d.produto === produto);
+}
+
+function sortMonthly(rows) {
+  return [...rows].sort((a,b) => a.ano !== b.ano ? a.ano-b.ano : MES_ORDER[a.mes]-MES_ORDER[b.mes]);
+}
+
+function aggregate(rows, period) {
+  const sorted = sortMonthly(rows);
+  if (period === 'mensal') {
+    return sorted.map(r => ({
+      label: r.mes.substring(0,3)+'/'+String(r.ano).slice(2),
+      midia: r.midia_paga, leads: r.leads,
+      visitas: r.visitas, vendas: r.vendas, vgv: r.vgv,
+      vgv_externo: r.vgv_externo || 0
+    }));
+  }
+  const size = period === 'trimestral' ? 3 : 6;
+  const buckets = {};
+  sorted.forEach(r => {
+    const idx = Math.floor((MES_ORDER[r.mes]-1)/size);
+    const key = r.ano+'-'+idx;
+    if (!buckets[key]) buckets[key] = {ano:r.ano,idx,midia:0,leads:0,visitas:0,vendas:0,vgv:0,vgv_externo:0};
+    buckets[key].midia  += r.midia_paga;
+    buckets[key].leads  += r.leads;
+    buckets[key].visitas+= r.visitas;
+    buckets[key].vendas += r.vendas;
+    buckets[key].vgv    += r.vgv;
+    buckets[key].vgv_externo += (r.vgv_externo || 0);
+  });
+  const pfx = period === 'trimestral' ? 'T' : 'S';
+  return Object.values(buckets)
+    .sort((a,b) => a.ano!==b.ano ? a.ano-b.ano : a.idx-b.idx)
+    .map(b => ({...b, label: pfx+(b.idx+1)+'/'+String(b.ano).slice(2)}));
+}
+
+function withMetrics(agg) {
+  return agg.map(a => ({
+    ...a,
+    vgv_externo: a.vgv_externo||0,
+    cpl:    a.leads>0   ? a.midia/a.leads   : 0,
+    cpv:    a.visitas>0 ? a.midia/a.visitas  : 0,
+    cpvenda:a.vendas>0  ? a.midia/a.vendas   : 0,
+    lpv:    a.visitas>0 ? a.leads/a.visitas  : 0,
+    lpvenda:a.vendas>0  ? a.leads/a.vendas   : 0
+  }));
+}
+
+function fmt(n) {
+  if (!isFinite(n)||isNaN(n)||n===0) return '—';
+  return n.toLocaleString('pt-BR',{maximumFractionDigits:1});
+}
+function fmtBRL(n) {
+  if (!isFinite(n)||isNaN(n)||n===0) return '—';
+  return 'R$ '+n.toLocaleString('pt-BR',{maximumFractionDigits:0});
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#7A6E6C';
+
+// Register datalabels only when needed, unregister for charts that don't use it
+Chart.register(ChartDataLabels);
+
+function fmtLabel(v, pfx) {
+  if (!v || !isFinite(v) || v === 0) return '';
+  if (pfx) return pfx + v.toLocaleString('pt-BR', {maximumFractionDigits:0});
+  return v.toLocaleString('pt-BR', {maximumFractionDigits:1});
+}
+
+// Shared datalabel base style for BAR datasets
+function barDL(color) {
+  return {
+    display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+    anchor: 'end',
+    align: 'end',
+    offset: 2,
+    color: color || '#1A1210',
+    font: { size: 10, weight: '600' },
+    formatter: function(v) { return v > 0 ? v.toLocaleString('pt-BR',{maximumFractionDigits:0}) : ''; },
+    clamp: true
+  };
+}
+
+// Shared datalabel for LINE datasets
+function lineDL(pfx, color) {
+  return {
+    display: function(ctx) {
+      // Show every other label on dense datasets to avoid overlap
+      var data = ctx.dataset.data;
+      var n = data.length;
+      if (n <= 8) return data[ctx.dataIndex] > 0;
+      if (n <= 16) return ctx.dataIndex % 2 === 0 && data[ctx.dataIndex] > 0;
+      return ctx.dataIndex % 3 === 0 && data[ctx.dataIndex] > 0;
+    },
+    anchor: 'top',
+    align: 'top',
+    offset: 4,
+    color: color || '#1A1210',
+    font: { size: 10, weight: '600' },
+    formatter: function(v) {
+      if (!v || !isFinite(v) || v === 0) return '';
+      if (pfx) return pfx + v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+      return v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+    },
+    clamp: true,
+    backgroundColor: function(ctx) {
+      return ctx.dataset.data[ctx.dataIndex] > 0 ? 'rgba(255,255,255,0.85)' : 'transparent';
+    },
+    borderRadius: 3,
+    padding: { top:2, bottom:2, left:4, right:4 }
+  };
+}
+
+function comboChart(id, labels, barVals, lineVals, barLabel, lineLabel, barBg, lineColor, linePfx) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {type:'bar', label:barLabel, data:barVals, backgroundColor:barBg,
+         borderColor:CR, borderWidth:1.5, borderRadius:4, yAxisID:'y', order:2,
+         datalabels: barDL('#5C4F4D')},
+        {type:'line', label:lineLabel, data:lineVals, borderColor:lineColor,
+         borderWidth:2.5, pointBackgroundColor:lineColor, pointRadius:4,
+         tension:0.35, yAxisID:'y1', order:1, fill:false,
+         datalabels: lineDL(linePfx, lineColor)}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,padding:14}},
+        datalabels: {},
+        tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+          callbacks:{label: function(c) {
+            var v=c.parsed.y;
+            if(c.datasetIndex===1) return ' '+lineLabel+': '+(linePfx||'')+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+            return ' '+barLabel+': '+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:1}):'—');
+          }}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},position:'left'},
+        y1:{grid:{display:false},position:'right',min:0,
+          ticks:{callback:function(v){return (linePfx||'')+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}}
+      }
+    }
+  });
+}
+
+function barChart(id, labels, vals, label, color) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type:'bar',
+    data:{labels, datasets:[{
+      label, data:vals,
+      backgroundColor: vals.map(function(v){return v>0?color:'rgba(196,184,181,0.4)';}),
+      borderRadius:6
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels: {
+          display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+          anchor: 'end', align: 'end', offset: 2,
+          color: '#5C4F4D',
+          font: { size: 10, weight: '600' },
+          formatter: function(v) { return v > 0 ? v.toLocaleString('pt-BR',{maximumFractionDigits:1}) : ''; },
+          clamp: true
+        },
+        tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'}}
+      }
+    }
+  });
+}
+
+function tripleChart(id, labels, barVals, line1Vals, line2Vals, extVgvVals) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  var hasExt = extVgvVals && extVgvVals.some(function(v){return v>0;});
+  var datasets = [
+    {type:'bar', label:'Vendas', data:barVals,
+     backgroundColor:'rgba(201,120,37,0.2)', borderColor:CA,
+     borderWidth:1.5, borderRadius:4, yAxisID:'y', order:3,
+     datalabels: barDL('#C97825')},
+    {type:'line', label:'Custo/Venda', data:line1Vals,
+     borderColor:CR, borderWidth:2.5, pointBackgroundColor:CR,
+     pointRadius:4, tension:0.35, yAxisID:'y1', order:1, fill:false,
+     datalabels: lineDL('R$ ', CR)},
+    {type:'line', label:'VGV Total', data:line2Vals,
+     borderColor:CD, borderWidth:2, pointBackgroundColor:CD,
+     pointRadius:3, tension:0.35, yAxisID:'y2', order:2, fill:false, borderDash:[5,3],
+     datalabels: lineDL('R$ ', CD)}
+  ];
+  if (hasExt) {
+    datasets.push({
+      type:'bar', label:'VGV Externo ★', data:extVgvVals,
+      backgroundColor:'rgba(0,0,0,0)',
+      borderColor:'rgba(0,0,0,0)',
+      borderWidth:0, borderRadius:0, yAxisID:'y2', order:4,
+      datalabels:{ display: false }
+    });
+  }
+  charts[id] = new Chart(ctx, {
+    data:{labels, datasets:datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,padding:14}},
+        datalabels: {},
+        tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+          callbacks:{label:function(c){
+            var v=c.parsed.y;
+            if(c.datasetIndex===0) return ' Vendas: '+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:1}):'—');
+            return ' '+c.dataset.label+': R$ '+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+          }}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},position:'left'},
+        y1:{grid:{display:false},position:'right',
+          ticks:{callback:function(v){return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}},
+        y2:{display:false}
+      }
+    }
+  });
+}
+
+function renderBlock(prefix, rows) {
+  const agg = withMetrics(aggregate(rows, currentPeriod));
+  if (!agg.length) return;
+  const labels = agg.map(function(a){return a.label;});
+
+  comboChart(prefix+'_c1', labels,
+    agg.map(function(a){return a.leads;}),
+    agg.map(function(a){return a.cpl;}),
+    'Leads', 'CPL', 'rgba(200,16,46,0.18)', CR, 'R$ ');
+
+  comboChart(prefix+'_c2', labels,
+    agg.map(function(a){return a.visitas;}),
+    agg.map(function(a){return a.cpv;}),
+    'Visitas', 'Custo/Visita', 'rgba(29,106,114,0.18)', CT, 'R$ ');
+
+  tripleChart(prefix+'_c3', labels,
+    agg.map(function(a){return a.vendas;}),
+    agg.map(function(a){return a.cpvenda;}),
+    agg.map(function(a){return a.vgv;}),
+    agg.map(function(a){return a.vgv_externo||0;}));
+
+  barChart(prefix+'_c4', labels,
+    agg.map(function(a){return a.lpvenda;}),
+    'Leads/Venda', CR);
+
+  barChart(prefix+'_c5', labels,
+    agg.map(function(a){return a.lpv;}),
+    'Leads/Visita', CT);
+
+  // Chart c6: Investment + cumulative line
+  (function(){
+    var invVals = agg.map(function(a){return a.midia;});
+    var cumVals = [];
+    var acc = 0;
+    invVals.forEach(function(v){ acc+=v; cumVals.push(acc); });
+    destroyChart(prefix+'_c6');
+    var ctx6 = document.getElementById(prefix+'_c6');
+    if(!ctx6) return;
+    charts[prefix+'_c6'] = new Chart(ctx6, {
+      data:{
+        labels: labels,
+        datasets:[
+          {type:'bar', label:'Investimento', data:invVals,
+           backgroundColor:'rgba(200,16,46,0.18)', borderColor:CR,
+           borderWidth:1.5, borderRadius:4, yAxisID:'y', order:2,
+           datalabels:{
+             display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},
+             anchor:'end',align:'end',offset:2,color:'#5C4F4D',
+             font:{size:9,weight:'600'},
+             formatter:function(v){return v>0?'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'';},
+             clamp:true
+           }
+          },
+          {type:'line', label:'Acumulado', data:cumVals,
+           borderColor:CA, borderWidth:2.5, pointBackgroundColor:CA,
+           pointRadius:4, tension:0.35, yAxisID:'y1', order:1, fill:false,
+           datalabels: lineDL('R$ ', CA)
+          }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,padding:14}},
+          datalabels:{},
+          tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+            callbacks:{label:function(c){
+              var v=c.parsed.y;
+              return ' '+c.dataset.label+': R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+            }}
+          }
+        },
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},position:'left',
+             ticks:{callback:function(v){return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}},
+          y1:{grid:{display:false},position:'right',min:0,
+             ticks:{callback:function(v){return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}}
+        }
+      }
+    });
+  })();
+
+  // Update KPIs totals (always mensal to accumulate everything)
+  var all = withMetrics(aggregate(rows, 'mensal'));
+  var tL=0,tV=0,tVd=0,tVGV=0,tM=0;
+  all.forEach(function(a){tL+=a.leads;tV+=a.visitas;tVd+=a.vendas;tVGV+=a.vgv;tM+=a.midia;});
+  function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  set(prefix+'_k1', tL.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  set(prefix+'_k2', tV.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  set(prefix+'_k3', tVd.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  set(prefix+'_k4', tVGV>0?'R$ '+tVGV.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+  set(prefix+'_k5', tL>0?'R$ '+(tM/tL).toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+  set(prefix+'_k6', tVd>0?fmt(tL/tVd)+'x':'—');
+  set(prefix+'_k7', tV>0?fmt(tL/tV)+'x':'—');
+  set(prefix+'_k8', tM>0?'R$ '+tM.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+  set(prefix+'_k9', tVGV>0?(tM/tVGV*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'—');
+
+  // Funnel
+  var pLV  = tL>0  ? (tV/tL*100)   : 0;
+  var pVVd = tV>0  ? (tVd/tV*100)  : 0;
+  var pLVd = tL>0  ? (tVd/tL*100)  : 0;
+  // Width: visitas bar = 50% of leads max, vendas bar = 75% of visitas max
+  // So visitas width (relative to leads) capped at 50%, vendas capped at 50%*75%=37.5%
+  var wV  = tL>0 ? Math.min(100, Math.max(20, (tV/tL)*100)) : 0;
+  var wVd = tV>0 ? Math.min(100, Math.max(10, (tVd/tV)*100)) : 0;
+  // Scale: visitas max display = 50% of card, vendas max = 75% of visitas display
+  var wVdisp  = Math.max(20, Math.min(50, wV * 0.5));
+  var wVddisp = Math.max(10, Math.min(wVdisp * 0.75, wVdisp * (wVd/100)));
+  set(prefix+'_fn1', tL.toLocaleString('pt-BR'));
+  set(prefix+'_fn2', tV.toLocaleString('pt-BR'));
+  set(prefix+'_fn3', tVd.toLocaleString('pt-BR'));
+  set(prefix+'_fr1', pLV.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%');
+  set(prefix+'_fr2', pVVd.toLocaleString('pt-BR',{maximumFractionDigits:2})+'%');
+  set(prefix+'_fconv', pLVd.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%');
+  // Apply widths as right-padding to create funnel shape (bar-inner fills from left)
+  var fb2 = document.getElementById(prefix+'_fb2');
+  var fb3 = document.getElementById(prefix+'_fb3');
+  var fs2 = fb2 ? fb2.parentElement : null;
+  var fs3 = fb3 ? fb3.parentElement : null;
+  if(fs2) fs2.style.paddingRight = (100 - wVdisp)+'%';
+  if(fs3) fs3.style.paddingRight = (100 - wVddisp)+'%';
+}
+
+function blockHTML(prefix, title, isGeral) {
+  var tagHTML = isGeral ? '<span class="tag">Consolidado</span>' : '';
+  return '<div class="section-header"><div class="section-title">'+title+' '+tagHTML+'</div></div>'
+  +'<div class="kpi-funnel-row">'
+  +'<div class="kpi-grid kpi-grid-left">'
+  +'<div class="kpi-card"><div class="kpi-label">Total Leads</div><div class="kpi-value" id="'+prefix+'_k1">...</div><div class="kpi-sub">Período completo</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Visitas</div><div class="kpi-value" id="'+prefix+'_k2">...</div><div class="kpi-sub">Período completo</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Vendas</div><div class="kpi-value red" id="'+prefix+'_k3">...</div><div class="kpi-sub">Período completo</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">VGV Total</div><div class="kpi-value" id="'+prefix+'_k4">...</div><div class="kpi-sub">R$ total</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">CPL Médio</div><div class="kpi-value red" id="'+prefix+'_k5">...</div><div class="kpi-sub">R$ por lead</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Leads / Venda</div><div class="kpi-value" id="'+prefix+'_k6">...</div><div class="kpi-sub">Eficiência</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Leads / Visita</div><div class="kpi-value" id="'+prefix+'_k7">...</div><div class="kpi-sub">Conversão</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Mídia Paga</div><div class="kpi-value" id="'+prefix+'_k8">...</div><div class="kpi-sub">R$ total</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Budget / VGV</div><div class="kpi-value red" id="'+prefix+'_k9">...</div><div class="kpi-sub">Quanto menor, melhor</div></div>'
+  +'</div>'
+  +'<div class="funnel-card">'
+  +'<div class="funnel-title">Funil de Conversão</div>'
+  +'<div class="funnel-wrap">'
+  +'<div class="funnel-step fbar-leads"><div class="funnel-bar-inner"><span class="funnel-num" id="'+prefix+'_fn1">—</span><span class="funnel-lbl">Leads</span></div></div>'
+  +'<div class="funnel-arrow-row"><span class="funnel-rate" id="'+prefix+'_fr1">—</span><span class="funnel-rate-lbl">Lead → Visita</span></div>'
+  +'<div class="funnel-step fbar-visitas"><div class="funnel-bar-inner" id="'+prefix+'_fb2"><span class="funnel-num" id="'+prefix+'_fn2">—</span><span class="funnel-lbl">Visitas</span></div></div>'
+  +'<div class="funnel-arrow-row"><span class="funnel-rate" id="'+prefix+'_fr2">—</span><span class="funnel-rate-lbl">Visita → Venda</span></div>'
+  +'<div class="funnel-step fbar-vendas"><div class="funnel-bar-inner" id="'+prefix+'_fb3"><span class="funnel-num" id="'+prefix+'_fn3">—</span><span class="funnel-lbl">Vendas</span></div></div>'
+  +'<div class="funnel-conv-row"><span class="funnel-conv-num" id="'+prefix+'_fconv">—</span><span class="funnel-conv-lbl">Conversão total Lead → Venda</span></div>'
+  +'</div>'
+  +'</div>'
+  +'</div>'
+  +'<div class="charts-grid">'
+  +'<div class="chart-card"><div class="chart-title">Volume de Leads &amp; CPL</div><div class="chart-subtitle">Barras = Leads | Linha = Custo por Lead (R$)</div><div class="chart-wrap"><canvas id="'+prefix+'_c1"></canvas></div></div>'
+  +'<div class="chart-card"><div class="chart-title">Visitas &amp; Custo por Visita</div><div class="chart-subtitle">Barras = Visitas | Linha = Custo por Visita (R$)</div><div class="chart-wrap"><canvas id="'+prefix+'_c2"></canvas></div></div>'
+  +'</div>'
+  +'<div class="charts-grid" style="grid-template-columns:1fr;">'
+  +'<div class="chart-card"><div class="chart-title">Vendas, Custo por Venda &amp; VGV</div><div class="chart-subtitle">Barras = Vendas | Linha vermelha = Custo/Venda | Linha tracejada = VGV (R$)</div><div class="chart-wrap"><canvas id="'+prefix+'_c3"></canvas></div></div>'
+  +'</div>'
+  +'<div class="charts-grid" style="grid-template-columns:1fr;">'
+  +'<div class="chart-card"><div class="chart-title">Investimento em Mídia</div><div class="chart-subtitle">Barras = Investimento total (R$) | Linha = Acumulado</div><div class="chart-wrap"><canvas id="'+prefix+'_c6"></canvas></div></div>'
+  +'</div>'
+  +'<div class="charts-grid">'
+  +'<div class="chart-card"><div class="chart-title">Leads necessários por Venda</div><div class="chart-subtitle">Qtd. de leads para cada venda realizada</div><div class="chart-wrap-sm"><canvas id="'+prefix+'_c4"></canvas></div></div>'
+  +'<div class="chart-card"><div class="chart-title">Leads necessários por Visita</div><div class="chart-subtitle">Qtd. de leads para cada visita realizada</div><div class="chart-wrap-sm"><canvas id="'+prefix+'_c5"></canvas></div></div>'
+  +'</div>';
+}
+
+function filterByYear(rows) {
+  return globalYear===0 ? rows : rows.filter(function(r){return r.ano===globalYear;});
+}
+
+function renderAll() {
+  renderBlock('geral', filterByYear(getGeralRows()));
+  getProducts().forEach(function(p) {
+    var prefix = 'p_'+p.replace(/[^a-zA-Z0-9]/g,'_');
+    renderBlock(prefix, filterByYear(DATA.filter(function(d){return d.produto===p;})));
+  });
+}
+
+function setGlobalYear(year, btn) {
+  globalYear = year;
+  document.querySelectorAll('.year-btn-header').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderAll();
+  buildSummaryTable();
+  setTimeout(function(){
+    document.querySelectorAll('.year-btn-header').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+  }, 200);
+}
+
+
+function setPeriod(p) {
+  currentPeriod = p;
+  ['mensal','trimestral','semestral'].forEach(function(x){
+    document.getElementById('btn_'+x).classList.toggle('active', x===p);
+  });
+  renderAll();
+}
+
+function scrollToSection(id, btn) {
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var el = document.getElementById('anchor_'+id);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+(function init() {
+  var products = getProducts();
+  var nav = document.getElementById('navInner');
+  var main = document.getElementById('mainContent');
+
+  // Build HTML
+  var html = '<div id="anchor_geral" style="padding-top:1px"></div>';
+  html += blockHTML('geral', 'Visao Geral', true);
+
+  products.forEach(function(p) {
+    var prefix = 'p_'+p.replace(/[^a-zA-Z0-9]/g,'_');
+    var safeId = p.replace(/[^a-zA-Z0-9]/g,'_');
+    html += '<div id="anchor_'+safeId+'" class="produto-divider">'
+           +'<div class="produto-divider-line"></div>'
+           +'<div class="produto-divider-dot"></div>'
+           +'<div class="produto-divider-label">'+p+'</div>'
+           +'<div class="produto-divider-dot"></div>'
+           +'<div class="produto-divider-line"></div>'
+           +'</div>';
+    html += blockHTML(prefix, p, false);
+
+    // Nav button
+    var btn = document.createElement('button');
+    btn.className = 'nav-btn';
+    btn.textContent = p;
+    btn.setAttribute('id', 'navbtn_'+safeId);
+    (function(pid, safeId){ 
+      btn.onclick = function(){ scrollToSection(safeId, this); };
+    })(p, safeId);
+    nav.appendChild(btn);
+  });
+
+  main.innerHTML = html;
+  setTimeout(function() { renderAll(); buildSummaryTable(); }, 100);
+})();
+
+// ── SCROLL SPY ──────────────────────────────────────────────────────────────
+(function() {
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function() {
+      ticking = false;
+      var navHeight = 64 + (document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 46);
+      var anchors = document.querySelectorAll('[id^="anchor_"]');
+      var current = null;
+      anchors.forEach(function(el) {
+        var rect = el.getBoundingClientRect();
+        if (rect.top <= navHeight + 30) current = el.id.replace('anchor_', '');
+      });
+      if (current) {
+        document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+        var activeBtn = document.getElementById('navbtn_' + current);
+        if (!activeBtn && current === 'geral') activeBtn = document.querySelector('.nav-btn');
+        if (activeBtn) {
+          activeBtn.classList.add('active');
+        }
+      }
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive: true});
+})();
+
+
+function buildSummaryTable() {
+  var products = getProducts();
+
+  function calcRow(rows) {
+    var filtered = globalYear===0 ? rows : rows.filter(function(r){return r.ano===globalYear;});
+    var all = withMetrics(aggregate(filtered, 'mensal'));
+    var tL=0,tV=0,tVd=0,tVGV=0,tM=0;
+    all.forEach(function(a){tL+=a.leads;tV+=a.visitas;tVd+=a.vendas;tVGV+=a.vgv;tM+=a.midia;});
+    return {
+      leads:tL, visitas:tV, vendas:tVd, vgv:tVGV, midia:tM,
+      cpl:     tL>0  ? tM/tL   : 0,
+      cpv:     tV>0  ? tM/tV   : 0,
+      cpvenda: tVd>0 ? tM/tVd  : 0,
+      lpvenda: tVd>0 ? tL/tVd  : 0,
+      lpvisita:tV>0  ? tL/tV   : 0,
+      budgetvgv:tVGV>0 ? tM/tVGV*100 : 0
+    };
+  }
+
+  function n(v,d){return v>0?v.toLocaleString('pt-BR',{maximumFractionDigits:d||0}):'—';}
+  function brl(v){return v>0?'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—';}
+  function xfmt(v){return v>0?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'x':'—';}
+  function bvgv(v){return v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'—';}
+
+  var cols = [
+    {label:'Empreendimento',   key:'nome'},
+    {label:'Mídia Paga',       key:'midia',     fmt:brl},
+    {label:'Leads',            key:'leads',     fmt:function(v){return n(v);}},
+    {label:'CPL',              key:'cpl',       fmt:brl},
+    {label:'Visitas',          key:'visitas',   fmt:function(v){return n(v);}},
+    {label:'Cst/Visita',       key:'cpv',       fmt:brl},
+    {label:'Vendas',           key:'vendas',    fmt:function(v){return n(v);}},
+    {label:'Cst/Venda',        key:'cpvenda',   fmt:brl},
+    {label:'VGV',              key:'vgv',       fmt:brl},
+    {label:'Lds/Venda',        key:'lpvenda',   fmt:xfmt},
+    {label:'Lds/Visita',       key:'lpvisita',  fmt:xfmt},
+    {label:'Bdg/VGV',          key:'budgetvgv', fmt:bvgv}
+  ];
+
+  function makeRow(nome, data, isGeral, isEven) {
+    var rc = isGeral ? 'tr-geral' : (isEven ? 'tr-even' : 'tr-odd');
+    var nameCell = isGeral
+      ? '<td class="td-name td-sticky"><span class="badge-geral">Consolidado</span></td>'
+      : '<td class="td-name td-sticky">'+nome+'</td>';
+    var cells = cols.slice(1).map(function(col){
+      return '<td class="td-val">'+col.fmt(data[col.key])+'</td>';
+    }).join('');
+    return '<tr class="'+rc+'">'+nameCell+cells+'</tr>';
+  }
+
+  var geralRow = calcRow(getGeralRows());
+  var tbody = makeRow('Geral', geralRow, true, false);
+  products.forEach(function(p,i){
+    var r = calcRow(DATA.filter(function(d){return d.produto===p;}));
+    if (r.leads>0||r.visitas>0||r.vendas>0)
+      tbody += makeRow(p, r, false, i%2===0);
+  });
+
+  var thead = cols.map(function(col,i){
+    return '<th class="'+(i===0?'th-name th-sticky':'th-val')+'">'+col.label+'</th>';
+  }).join('');
+
+  var html = '<div class="table-section">'
+    +'<div class="table-title-row">'
+    +'<span class="table-section-title">Resumo Consolidado</span>'
+    +'</div>'
+    +'<div class="table-scroll">'
+    +'<table class="summary-table"><thead><tr>'+thead+'</tr></thead><tbody id="summaryTbody">'+tbody+'</tbody></table>'
+    +'</div></div>';
+
+  var el = document.getElementById('summaryTable');
+  if (!el) { el = document.createElement('div'); el.id='summaryTable'; document.getElementById('mainContent').appendChild(el); }
+  el.innerHTML = html;
+}
+
+
+
+</script>
+</body>
+</html>
