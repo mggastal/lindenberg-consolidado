@@ -568,10 +568,12 @@ function tripleChart(id, labels, barVals, line1Vals, line2Vals, extVgvVals) {
   ];
   if (hasExt) {
     datasets.push({
-      type:'bar', label:'VGV Externo ★', data:extVgvVals,
-      backgroundColor:'rgba(0,0,0,0)',
+      type:'line', label:'VGV Externo ★', data:extVgvVals,
       borderColor:'rgba(0,0,0,0)',
-      borderWidth:0, borderRadius:0, yAxisID:'y2', order:4,
+      backgroundColor:'rgba(0,0,0,0)',
+      borderWidth:0,
+      pointRadius:0,
+      yAxisID:'y2', order:4,
       datalabels:{ display: false }
     });
   }
