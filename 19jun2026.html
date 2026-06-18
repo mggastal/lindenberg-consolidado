@@ -145,6 +145,57 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
   .app-footer p{font-size:10px;}
 }
 
+/* REPORT DATE in header subtitle */
+#reportDate{font-weight:600;letter-spacing:0.04em;}
+
+/* OBSERVAÇÕES PANEL */
+.obs-overlay{
+  position:fixed; inset:0; background:rgba(26,18,16,0.45);
+  z-index:200; display:none; align-items:flex-start; justify-content:center;
+  padding-top:84px; backdrop-filter:blur(2px);
+}
+.obs-overlay.open{display:flex;}
+.obs-panel{
+  background:var(--off-white); border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.25);
+  width:min(560px, 92vw); max-height:calc(100vh - 120px); overflow-y:auto;
+  animation:obsSlideIn 0.22s ease-out;
+}
+@keyframes obsSlideIn{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
+.obs-panel-header{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  background:var(--red); color:white; padding:20px 24px; border-radius:18px 18px 0 0;
+  position:sticky; top:0;
+}
+.obs-panel-title{font-family:'Playfair Display',serif; font-size:19px; font-weight:700;}
+.obs-panel-date{font-size:12px; opacity:0.75; margin-top:3px; letter-spacing:0.03em;}
+.obs-close-btn{
+  background:rgba(255,255,255,0.15); border:none; color:white; width:30px; height:30px;
+  border-radius:50%; font-size:18px; line-height:1; cursor:pointer; flex-shrink:0;
+  transition:background 0.15s;
+}
+.obs-close-btn:hover{background:rgba(255,255,255,0.28);}
+.obs-panel-body{padding:18px 24px 26px; display:flex; flex-direction:column; gap:14px;}
+.obs-item{
+  background:white; border-radius:12px; padding:14px 16px;
+  border-left:3px solid var(--red); box-shadow:0 1px 6px rgba(26,18,16,0.05);
+}
+.obs-item-tag{
+  display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.06em; color:var(--red); background:var(--red-muted);
+  padding:3px 9px; border-radius:5px; margin-bottom:7px;
+}
+.obs-tag-highlight{background:var(--red); color:white;}
+.obs-item-text{font-size:14px; color:var(--text); line-height:1.5; font-weight:500;}
+.obs-item-sub{font-size:12.5px; color:var(--text-light); line-height:1.55; margin-top:6px;}
+.obs-panel-empty{text-align:center; padding:40px 20px; color:var(--gray-dark); font-size:13px;}
+#sw-obs.active{background:rgba(255,255,255,0.18); color:white; font-weight:600;}
+
+@media(max-width:768px){
+  .obs-overlay{padding-top:0; align-items:stretch;}
+  .obs-panel{width:100%; max-height:100%; height:100%; border-radius:0;}
+  .obs-panel-header{border-radius:0;}
+}
+
 /* ═══════════════════════════════════════════════════
    MOBILE — max-width: 768px
    Desktop code is NOT touched above this block.
@@ -319,7 +370,7 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
       <div class="brand-logo"><span>L</span></div>
       <div>
         <div class="brand-name">Lindenberg Consolidado</div>
-        <div class="brand-sub" id="headerSub">Revenue Board</div>
+        <div class="brand-sub"><span id="headerSub">Revenue Board</span> · <span id="reportDate">18/06/2026</span></div>
       </div>
     </div>
 
@@ -327,12 +378,49 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
     <div class="switcher">
       <button class="switcher-btn active" id="sw-rb" onclick="switchPage('rb')">Consolidado</button>
       <button class="switcher-btn" id="sw-am" onclick="switchPage('am')">Mensal</button>
+      <button class="switcher-btn" id="sw-obs" onclick="toggleObs()">Obs</button>
     </div>
 
     <!-- Right side spacer (keeps switcher visually centered) -->
     <div class="header-right"></div>
   </div>
 </header>
+
+<!-- OBSERVAÇÕES — overlay panel -->
+<div class="obs-overlay" id="obsOverlay" onclick="closeObs(event)">
+  <div class="obs-panel" onclick="event.stopPropagation()">
+    <div class="obs-panel-header">
+      <div>
+        <div class="obs-panel-title">Observações da Reunião</div>
+        <div class="obs-panel-date" id="obsDate">18/06/2026</div>
+      </div>
+      <button class="obs-close-btn" onclick="closeObs()" aria-label="Fechar">×</button>
+    </div>
+    <div class="obs-panel-body" id="obsBody">
+      <div class="obs-item">
+        <div class="obs-item-tag">Praça Itaim</div>
+        <div class="obs-item-text">Iniciar atendimento automatizado.</div>
+        <div class="obs-item-sub">Possibilidade de fazer com uma verba separada em um formulário novo, dividindo o investimento de forma igual — metade da geração seria para teste.</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-item-tag obs-tag-highlight">Canário</div>
+        <div class="obs-item-text">Durante a reunião, entrou uma venda do Canário.</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-item-tag">Canário</div>
+        <div class="obs-item-text">Início da campanha na segunda-feira, dia 22.</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-item-tag">Canário</div>
+        <div class="obs-item-text">Receber as peças hoje, dia 18.</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-item-tag">Jota</div>
+        <div class="obs-item-text">Criativos NR já solicitados — em validação.</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PAGE: REVENUE BOARD -->
 <div class="page active" id="page-rb">
@@ -1617,6 +1705,30 @@ window.addEventListener('resize', syncStickyOffsets);
 // Re-measure shortly after load too, in case fonts/webfonts shift heights
 setTimeout(syncStickyOffsets, 300);
 setTimeout(syncStickyOffsets, 1000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OBSERVAÇÕES PANEL
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleObs() {
+  var overlay = document.getElementById('obsOverlay');
+  var btn = document.getElementById('sw-obs');
+  var isOpen = overlay.classList.contains('open');
+  if (isOpen) {
+    overlay.classList.remove('open');
+    btn.classList.remove('active');
+  } else {
+    overlay.classList.add('open');
+    btn.classList.add('active');
+  }
+}
+function closeObs(evt) {
+  if (evt && evt.target.id !== 'obsOverlay') return;
+  document.getElementById('obsOverlay').classList.remove('open');
+  document.getElementById('sw-obs').classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeObs();
+});
 
 function switchPage(page) {
   document.getElementById('page-rb').classList.toggle('active', page === 'rb');
