@@ -6,6 +6,7 @@ on:
       - '*.html'           # Qualquer HTML novo ou atualizado dispara o build
       - '!historico.html'  # Exceto o próprio histórico
       - '!index.html'      # Exceto o index (gerado automaticamente)
+  workflow_dispatch:       # Permite rodar manualmente pelo GitHub
 
 jobs:
   build:
