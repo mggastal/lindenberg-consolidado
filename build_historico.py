@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 
 REPO_ROOT = Path(__file__).parent
-HISTORICO_OUT = REPO_ROOT / 'historico.html'
+HISTORICO_OUT = REPO_ROOT / 'index.html'
 
 def parse_date(s):
     for fmt in ('%d/%m/%Y',):
@@ -42,7 +42,7 @@ def obs_html(grupos):
 # ── Collect ───────────────────────────────────────────────────────────────────
 reunioes = []
 for f in REPO_ROOT.glob('*.html'):
-    if f.name in ('historico.html',): continue
+    if f.name in ('historico.html', 'index.html'): continue
     meta = extract_meta(f)
     if meta and meta.get('data'):
         slug = f.stem
