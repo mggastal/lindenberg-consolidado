@@ -191,20 +191,15 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
   transition:background 0.15s;
 }
 .obs-close-btn:hover{background:rgba(255,255,255,0.28);}
-.obs-panel-body{padding:18px 24px 26px; display:flex; flex-direction:column; gap:14px;}
-.obs-item{
-  background:white; border-radius:12px; padding:14px 16px;
-  border-left:3px solid var(--red); box-shadow:0 1px 6px rgba(26,18,16,0.05);
-}
-.obs-item-tag{
+.obs-panel-body{padding:18px 24px 26px; display:flex; flex-direction:column; gap:16px;}
+.obs-group{background:white; border-radius:12px; padding:14px 16px; box-shadow:0 1px 6px rgba(26,18,16,0.05);}
+.obs-group-tag{
   display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
   letter-spacing:0.06em; color:var(--red); background:var(--red-muted);
-  padding:3px 9px; border-radius:5px; margin-bottom:7px;
+  padding:3px 9px; border-radius:5px; margin-bottom:10px;
 }
-.obs-tag-highlight{background:var(--red); color:white;}
-.obs-item-text{font-size:14px; color:var(--text); line-height:1.5; font-weight:500;}
-.obs-item-sub{font-size:12.5px; color:var(--text-light); line-height:1.55; margin-top:6px;}
-.obs-panel-empty{text-align:center; padding:40px 20px; color:var(--gray-dark); font-size:13px;}
+.obs-list{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:7px;}
+.obs-list li{font-size:13.5px; color:var(--text); line-height:1.55;}
 #sw-obs.active{background:rgba(255,255,255,0.18); color:white; font-weight:600;}
 
 @media(max-width:768px){
@@ -414,34 +409,27 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
       <button class="obs-close-btn" onclick="closeObs()" aria-label="Fechar">×</button>
     </div>
     <div class="obs-panel-body" id="obsBody">
-      <div class="obs-item">
-        <div class="obs-item-tag">Praça Itaim</div>
-        <div class="obs-item-text">Verificar visitas e fazer um pente fino para entender o motivo de não termos as conversões.</div>
+      <div class="obs-group">
+        <div class="obs-group-tag">Praça Itaim</div>
+        <ul class="obs-list">
+          <li>Verificar visitas e fazer um pente fino para entender o motivo de não termos as conversões.</li>
+          <li>Existe uma possível venda com origem online para assinatura — lead encaminhado para a Houste.</li>
+        </ul>
       </div>
-      <div class="obs-item">
-        <div class="obs-item-tag">Praça Itaim</div>
-        <div class="obs-item-text">Existe uma possível venda com origem online para assinatura — lead encaminhado para a Houste.</div>
+      <div class="obs-group">
+        <div class="obs-group-tag">Canário</div>
+        <ul class="obs-list">
+          <li>CPL abriu baixo, porém taxa de descarte mantendo o padrão. Sugere que o criativo gera curiosidade mas não passa a imagem do empreendimento — filtro um pouco mais baixo. Mesmo público e conta do Moema; CPL 56% menor nesse momento.</li>
+          <li><strong>Vendas ainda não contabilizadas no relatório.</strong></li>
+        </ul>
       </div>
-      <div class="obs-item">
-        <div class="obs-item-tag">Canário</div>
-        <div class="obs-item-text">CPL abriu baixo, porém taxa de descarte mantendo o padrão.</div>
-        <div class="obs-item-sub">Sugere que o criativo gera curiosidade mas não passa a imagem do empreendimento — filtro um pouco mais baixo. Mesmo público e conta do Moema; CPL 56% menor nesse momento.</div>
-      </div>
-      <div class="obs-item">
-        <div class="obs-item-tag obs-tag-highlight">Canário</div>
-        <div class="obs-item-text">Vendas ainda não contabilizadas no relatório.</div>
-      </div>
-      <div class="obs-item">
-        <div class="obs-item-tag">Geral</div>
-        <div class="obs-item-text">Enviar relatório Praça Itaim com projeção de investimento e plano de mídia.</div>
-      </div>
-      <div class="obs-item">
-        <div class="obs-item-tag">Geral</div>
-        <div class="obs-item-text">Marcar reunião com a Laís para entender os leads duplicados.</div>
-      </div>
-      <div class="obs-item">
-        <div class="obs-item-tag">Geral</div>
-        <div class="obs-item-text">Verificar com SIGAVI — a Houste ainda não recebe leads com origem Laís.</div>
+      <div class="obs-group">
+        <div class="obs-group-tag">Geral</div>
+        <ul class="obs-list">
+          <li>Enviar relatório Praça Itaim com projeção de investimento e plano de mídia.</li>
+          <li>Marcar reunião com a Laís para entender os leads duplicados.</li>
+          <li>Verificar com SIGAVI — a Houste ainda não recebe leads com origem Laís.</li>
+        </ul>
       </div>
     </div>
   </div>
