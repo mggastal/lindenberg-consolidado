@@ -20,7 +20,9 @@ def parse_date(s):
 def extract_meta(html_path):
     try:
         c = html_path.read_text(encoding='utf-8')
-        m = re.search(r'<script id="reuniao-meta" type="application/json">([\s\S]*?)</script>', c)
+        # Use the LAST meta script (the one outside srcdoc)
+        all_metas = re.findall(r'<script id="reuniao-meta" type="application/json">(.*?)</script>', c, re.DOTALL)
+        m = type('m', (), {'group': lambda self, n: all_metas[-1]})() if all_metas else None
         if not m: return None
         return json.loads(m.group(1))
     except Exception as e:
