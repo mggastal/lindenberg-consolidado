@@ -6,7 +6,7 @@ e gera historico.html automaticamente.
 """
 import json, re, sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 REPO_ROOT = Path(__file__).parent
 HISTORICO_OUT = REPO_ROOT / 'index.html'
@@ -171,7 +171,7 @@ footer{{text-align:center;padding:20px;font-size:11px;color:var(--gray-dark);}}
 <main>
   <div class="page-title">Histórico de Reuniões</div>
   <p class="page-sub">{len(reunioes)} reuniões registradas · Números do mês em análise</p>
-  <p class="last-updated">Atualizado automaticamente · {datetime.now().strftime("%d/%m/%Y %H:%M")}</p>
+  <p class="last-updated">Atualizado automaticamente · {datetime.now(timezone(timedelta(hours=-3))).strftime("%d/%m/%Y %H:%M")}</p>
   {cards}
 </main>
 <footer>Dados exclusivos para uso no ambiente corporativo da Lindenberg. Desenvolvido por Grigoletti Mídias.</footer>
