@@ -398,6 +398,29 @@ body.print-mode{--off-white:#ffffff;--gray-light:#f5f5f5;}
 .chart-card{cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;}
 .chart-card:hover{box-shadow:0 8px 32px rgba(26,18,16,0.14);transform:translateY(-2px);}
 
+
+/* ─── PRINT MODE ─────────────────────────────────────────────────────────── */
+.print-btn{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;padding:0;}
+.print-btn:hover{border-color:white;background:rgba(255,255,255,0.1);}
+.print-btn-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.5);transition:all 0.2s;}
+.print-btn.active .print-btn-dot{background:#FFD700;box-shadow:0 0 6px #FFD700;}
+.print-btn.active{border-color:#FFD700;}
+body.print-mode{--off-white:#ffffff;--gray-light:#f5f5f5;}
+
+/* ─── CHART MODAL ─────────────────────────────────────────────────────────── */
+.chart-modal-overlay{position:fixed;inset:0;background:rgba(26,18,16,0.65);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);}
+.chart-modal-overlay.open{display:flex;}
+.chart-modal-box{background:white;border-radius:18px;box-shadow:0 32px 80px rgba(0,0,0,0.3);width:min(1300px,96vw);max-height:62vh;display:flex;flex-direction:column;animation:cmin 0.2s ease-out;}
+@keyframes cmin{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
+.chart-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.chart-modal-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text);}
+.chart-modal-close-float{position:fixed;top:16px;right:16px;z-index:301;background:white;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;color:var(--text-light);box-shadow:0 2px 12px rgba(0,0,0,0.25);line-height:1;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.chart-modal-close-float:hover{background:var(--red);color:white;}
+.chart-modal-body{padding:16px 24px;height:44vh;position:relative;display:flex;align-items:stretch;}
+.chart-modal-body canvas{width:100%!important;height:100%!important;flex:1;}
+.chart-card{cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;}
+.chart-card:hover{box-shadow:0 8px 32px rgba(26,18,16,0.14);transform:translateY(-2px);}
+
 </style>
 </head>
 <body>
@@ -920,6 +943,24 @@ function renderBlock(prefix, rows) {
       card.addEventListener('click', function() { openChartModal(cid, t); });
     });
   }, 300);
+
+  // Chart modal click handlers
+  (function(pfx) {
+    setTimeout(function() {
+      ['_c1','_c2','_c3','_c4','_c5','_c6'].forEach(function(sfx) {
+        var cid = pfx + sfx;
+        var el = document.getElementById(cid);
+        if (!el || el.__cm) return;
+        el.__cm = true;
+        var card = el.closest('.chart-card');
+        if (!card) return;
+        var tEl = card.querySelector('.chart-title');
+        card.addEventListener('click', function() {
+          openChartModal(cid, tEl ? tEl.textContent.trim() : '');
+        });
+      });
+    }, 300);
+  }(prefix));
 }
 
 function blockHTML(prefix, title, isGeral) {
@@ -1759,6 +1800,54 @@ function navScrollTo(id) {
 // breakpoint and expose as CSS variables, so sticky elements never overlap
 // regardless of how the header wraps (mobile / tablet / desktop).
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ─── PRINT MODE ───────────────────────────────────────────────────────────────
+function togglePrintMode() {
+  document.body.classList.toggle('print-mode');
+  document.getElementById('printBtn').classList.toggle('active',
+    document.body.classList.contains('print-mode'));
+}
+
+// ─── CHART MODAL ──────────────────────────────────────────────────────────────
+var __modalChart = null;
+
+function openChartModal(canvasId, title) {
+  var origChart = charts[canvasId];
+  if (!origChart) return;
+  document.getElementById('chartModalTitle').textContent = title || '';
+  document.getElementById('chartModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  var body = document.getElementById('chartModalBody');
+  body.innerHTML = '<canvas id="chartModalCanvas" style="width:100%;height:100%;"></canvas>';
+  var mc = document.getElementById('chartModalCanvas');
+  if (__modalChart) { try { __modalChart.destroy(); } catch(e){} __modalChart = null; }
+  var cfg = origChart.config;
+  var prevMAR = cfg.options.maintainAspectRatio;
+  cfg.options.maintainAspectRatio = false;
+  cfg.options.responsive = true;
+  var clonedData = JSON.parse(JSON.stringify(cfg.data));
+  var origDatasets = cfg.data.datasets;
+  clonedData.datasets.forEach(function(ds, i) {
+    if (origDatasets[i] && origDatasets[i].datalabels) ds.datalabels = origDatasets[i].datalabels;
+  });
+  __modalChart = new Chart(mc, {type:cfg.type, data:clonedData, options:cfg.options, plugins:cfg.plugins});
+  setTimeout(function() { cfg.options.maintainAspectRatio = prevMAR; }, 50);
+}
+
+function closeChartModal() {
+  document.getElementById('chartModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  if (__modalChart) { try { __modalChart.destroy(); } catch(e){} __modalChart = null; }
+  var body = document.getElementById('chartModalBody');
+  if (body) body.innerHTML = '';
+}
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeChartModal(); });
+document.addEventListener('DOMContentLoaded', function() {
+  var ov = document.getElementById('chartModalOverlay');
+  if (ov) ov.addEventListener('click', function(e) { if (e.target === this) closeChartModal(); });
+});
+
 function syncStickyOffsets() {
   var header = document.querySelector('header');
   var filterBar = document.querySelector('.filter-bar');
@@ -1821,5 +1910,15 @@ function switchPage(page) {
 
 <script id="reuniao-meta" type="application/json">{"data": "23/07/2026", "facs": 1292, "validas": 469, "aprov": 36.3, "cpl": 136, "invest": 200423, "leads": 1468, "visitas": 10, "mes_ref": "Julho/2026", "obs_grupos": []}</script>
 
+
+<div class="chart-modal-overlay" id="chartModalOverlay">
+  <button class="chart-modal-close-float" onclick="closeChartModal()" title="Fechar">×</button>
+  <div class="chart-modal-box" onclick="event.stopPropagation()">
+    <div class="chart-modal-header">
+      <div class="chart-modal-title" id="chartModalTitle"></div>
+    </div>
+    <div class="chart-modal-body" id="chartModalBody"></div>
+  </div>
+</div>
 </body>
 </html>
