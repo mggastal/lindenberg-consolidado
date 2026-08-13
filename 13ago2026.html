@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lindenberg — Revenue Board</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ─── SHARED ────────────────────────────────────────────────────────────── */
+
+:root {
+  --red:#C8102E; --red-dark:#8B0C1F; --red-light:#E8374F;
+  --red-muted:rgba(200,16,46,0.12); --white:#FFFFFF; --off-white:#FAF8F7;
+  --gray-light:#F0EDEC; --gray:#C4B8B5; --gray-dark:#7A6E6C;
+  --text:#1A1210; --text-light:#5C4F4D;
+  --border:rgba(200,16,46,0.18); --shadow:0 2px 24px rgba(26,18,16,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);}
+header{background:var(--red);color:white;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.25);}
+.header-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;}
+.header-inner-3col{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:16px;}
+.header-inner-3col .brand{justify-self:start;}
+.header-inner-3col .switcher{justify-self:center;}
+.header-inner-3col .header-right{justify-self:end;display:flex;align-items:center;}
+@media(max-width:900px){
+  .header-inner-3col{grid-template-columns:1fr;row-gap:8px;padding:10px 16px;height:auto;}
+  .header-inner-3col .brand,.header-inner-3col .switcher,.header-inner-3col .header-right{justify-self:center;}
+}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand-logo{width:36px;height:36px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.brand-logo span{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--red);line-height:1;}
+.brand-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:0.04em;color:white;}
+.brand-sub{font-size:11px;font-weight:400;opacity:0.7;letter-spacing:0.08em;text-transform:uppercase;color:white;}
+.period-toggle{display:flex;background:rgba(255,255,255,0.15);border-radius:8px;padding:3px;gap:2px;}
+.period-btn{padding:6px 16px;border:none;background:transparent;color:rgba(255,255,255,0.75);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.period-btn:hover{color:white;background:rgba(255,255,255,0.12);}
+.period-btn.active{background:white;color:var(--red);font-weight:600;}
+nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:var(--header-filter-h, 113px);z-index:90;box-shadow:0 2px 8px rgba(26,18,16,0.06);}
+nav::-webkit-scrollbar{display:none;}
+.nav-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;gap:0;flex-wrap:wrap;}
+.nav-btn{padding:14px 20px;border:none;background:transparent;color:var(--text-light);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all 0.2s;}
+.nav-btn:hover{color:var(--red);}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+main{max-width:1400px;margin:0 auto;padding:32px;}
+.section{display:none;}
+.section.active{display:block;}
+.section-header{margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:12px;}
+.tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;background:var(--red);color:white;padding:3px 10px;border-radius:4px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+
+.kpi-funnel-row{display:flex;gap:20px;align-items:flex-start;margin-bottom:28px;}
+.kpi-grid-left{flex:0 0 70%;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:0;}
+.funnel-card{flex:0 0 calc(30% - 20px);background:white;border-radius:14px;padding:22px 18px;box-shadow:var(--shadow);min-width:220px;overflow:hidden;}
+.funnel-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:0.01em;}
+.funnel-wrap{display:flex;flex-direction:column;gap:2px;width:100%;}
+.funnel-step{width:100%;margin:3px 0;box-sizing:border-box;transition:padding-right 0.7s ease;}
+.funnel-bar-inner{border-radius:8px;padding:9px 12px;display:flex;flex-direction:column;gap:2px;min-width:60px;width:100%;}
+.fbar-leads{padding-right:0;}
+.fbar-leads .funnel-bar-inner{background:var(--red);}
+.fbar-visitas .funnel-bar-inner{background:rgba(140,8,22,0.78);}
+.fbar-vendas .funnel-bar-inner{background:rgba(80,3,10,0.88);}
+.funnel-num{color:white;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;line-height:1;white-space:nowrap;}
+.funnel-lbl{color:rgba(255,255,255,0.9);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;white-space:nowrap;}
+.funnel-arrow-row{display:flex;align-items:center;gap:8px;padding:2px 0 2px 8px;}
+.funnel-rate{font-size:13px;font-weight:700;color:var(--red);white-space:nowrap;}
+.funnel-rate-lbl{font-size:10px;color:var(--gray-dark);white-space:nowrap;}
+.funnel-conv-row{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.funnel-conv-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--red);}
+.funnel-conv-lbl{font-size:10px;color:var(--gray-dark);line-height:1.3;}
+@media(max-width:1100px){
+  .kpi-funnel-row{flex-direction:column;}
+  .kpi-grid-left{flex:1 1 auto;width:100%;grid-template-columns:repeat(3,1fr);}
+  .funnel-card{flex:1 1 auto;width:100%;}
+}
+@media(max-width:600px){
+  .kpi-grid-left{grid-template-columns:repeat(2,1fr);}
+}
+
+
+.kpi-card{background:white;border-radius:12px;padding:18px;box-shadow:var(--shadow);border-top:3px solid var(--red);}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-dark);margin-bottom:6px;}
+.kpi-value{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);line-height:1;}
+.kpi-value.red{color:var(--red);}
+.kpi-sub{font-size:11px;color:var(--gray-dark);margin-top:4px;}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:22px;margin-bottom:22px;}
+.charts-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:22px;margin-bottom:22px;}
+.chart-card{background:white;border-radius:14px;padding:24px;box-shadow:var(--shadow);}
+.chart-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.chart-subtitle{font-size:11px;color:var(--gray-dark);margin-bottom:18px;}
+.chart-wrap{position:relative;height:310px;}
+.chart-wrap-sm{position:relative;height:270px;}
+.produto-divider{display:flex;align-items:center;gap:16px;margin:44px 0 28px;}
+.produto-divider-line{flex:1;height:1px;background:var(--border);}
+.produto-divider-label{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text);white-space:nowrap;}
+.produto-divider-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;}
+/* mobile rules moved to comprehensive block below */
+
+/* SUMMARY TABLE */
+.table-section{margin-top:52px;margin-bottom:48px;}
+.table-title-row{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:2px solid var(--border);flex-wrap:wrap;}
+.table-section-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);flex:1;}
+.table-scroll{overflow-x:auto;border-radius:14px;box-shadow:0 2px 24px rgba(26,18,16,0.08);}
+.summary-table{width:100%;border-collapse:separate;border-spacing:0;background:white;border-radius:14px;overflow:hidden;font-size:11.5px;}
+.summary-table thead tr{background:var(--red);}
+.th-name{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.9);white-space:nowrap;min-width:150px;}
+.th-val{padding:10px 12px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.9);white-space:nowrap;}
+.th-sticky{position:sticky;left:0;z-index:3;background:var(--red);}
+.tr-geral td{background:#FFF5F6;font-weight:700;border-bottom:2px solid var(--red);}
+.tr-even td{background:white;}
+.tr-odd td{background:#FAFAFA;}
+.summary-table tbody tr:hover td{background:rgba(200,16,46,0.05);transition:background 0.15s;}
+.summary-table tbody tr:hover td.td-sticky{position:sticky;left:0;z-index:2;box-shadow:2px 0 6px rgba(0,0,0,0.07);}
+.td-name{padding:9px 14px;color:var(--text);font-weight:500;white-space:nowrap;border-bottom:1px solid var(--gray-light);font-size:12px;}
+.td-val{padding:9px 12px;text-align:right;color:var(--text-light);border-bottom:1px solid var(--gray-light);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.tr-geral .td-val{color:var(--red-dark);}
+.td-sticky{position:sticky;left:0;z-index:2;box-shadow:2px 0 6px rgba(0,0,0,0.07);}
+.tr-even .td-sticky{background:white;}
+.tr-odd .td-sticky{background:#FAFAFA;}
+.tr-geral .td-sticky{background:#FFF5F6;}
+.badge-geral{display:inline-block;background:var(--red);color:white;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;}
+.year-toggle{display:flex;background:rgba(255,255,255,0.15);border-radius:8px;padding:3px;gap:2px;}
+.year-btn-header{padding:6px 14px;border:none;background:transparent;color:rgba(255,255,255,0.75);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.year-btn-header:hover{color:white;background:rgba(255,255,255,0.12);}
+.year-btn-header.active{background:white !important;color:var(--red) !important;font-weight:600;}
+
+.mobile-section-bar { display: none; }
+
+/* Scroll offset for sticky header + nav */
+[id^="anchor_"] {
+  scroll-margin-top: 120px;
+}
+
+/* EXTERNAL SALES TABLE */
+.ext-sales-wrap{background:white;border-radius:14px;padding:22px 26px;box-shadow:var(--shadow);border-top:3px solid var(--red);}
+.ext-sales-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;letter-spacing:0.01em;}
+.ext-sales-table{width:100%;border-collapse:collapse;font-size:13px;}
+.ext-th{padding:8px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:white;background:var(--red);}
+.ext-th-vgv,.ext-td-vgv{text-align:right;}
+.ext-td{padding:10px 14px;border-bottom:1px solid var(--gray-light);color:var(--text);}
+.ext-td-star{color:var(--red);font-size:15px;width:20px;}
+.ext-td-desc{color:var(--text-light);}
+.ext-sales-table tbody tr:hover{background:var(--gray-light);}
+.ext-sales-table tfoot td{border-top:2px solid var(--border);border-bottom:none;background:var(--gray-light);}
+@media(max-width:768px){
+  #externalSalesTable{padding:0 12px 24px;}
+  .ext-sales-wrap{padding:16px 14px;}
+  .ext-th,.ext-td{padding:8px 10px;font-size:11px;}
+}
+
+/* APP FOOTER */
+.app-footer{max-width:1400px;margin:0 auto;padding:28px 32px 36px;text-align:center;border-top:1px solid var(--border);}
+.app-footer p{font-size:11px;color:var(--gray-dark);line-height:1.6;margin:0;}
+.app-footer-credit{margin-top:6px !important;font-weight:600;letter-spacing:0.03em;}
+@media(max-width:768px){
+  .app-footer{padding:20px 16px 28px;}
+  .app-footer p{font-size:10px;}
+}
+
+/* REPORT DATE in header subtitle */
+#reportDate{font-weight:600;letter-spacing:0.04em;}
+
+/* OBSERVAÇÕES PANEL */
+.obs-overlay{
+  position:fixed; inset:0; background:rgba(26,18,16,0.45);
+  z-index:200; display:none; align-items:flex-start; justify-content:center;
+  padding-top:84px; backdrop-filter:blur(2px);
+}
+.obs-overlay.open{display:flex;}
+.obs-panel{
+  background:var(--off-white); border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.25);
+  width:min(560px, 92vw); max-height:calc(100vh - 120px); overflow-y:auto;
+  animation:obsSlideIn 0.22s ease-out;
+}
+@keyframes obsSlideIn{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
+.obs-panel-header{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  background:var(--red); color:white; padding:20px 24px; border-radius:18px 18px 0 0;
+  position:sticky; top:0;
+}
+.obs-panel-title{font-family:'Playfair Display',serif; font-size:19px; font-weight:700;}
+.obs-panel-date{font-size:12px; opacity:0.75; margin-top:3px; letter-spacing:0.03em;}
+.obs-close-btn{
+  background:rgba(255,255,255,0.15); border:none; color:white; width:30px; height:30px;
+  border-radius:50%; font-size:18px; line-height:1; cursor:pointer; flex-shrink:0;
+  transition:background 0.15s;
+}
+.obs-close-btn:hover{background:rgba(255,255,255,0.28);}
+.obs-panel-body{padding:18px 24px 26px; display:flex; flex-direction:column; gap:16px;}
+.obs-group{background:white; border-radius:12px; padding:14px 16px; box-shadow:0 1px 6px rgba(26,18,16,0.05);}
+.obs-group-tag{
+  display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.06em; color:var(--red); background:var(--red-muted);
+  padding:3px 9px; border-radius:5px; margin-bottom:10px;
+}
+.obs-list{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:7px;}
+.obs-list li{font-size:13.5px; color:var(--text); line-height:1.55;}
+#sw-obs.active{background:rgba(255,255,255,0.18); color:white; font-weight:600;}
+
+@media(max-width:768px){
+  .obs-overlay{padding-top:0; align-items:stretch;}
+  .obs-panel{width:100%; max-height:100%; height:100%; border-radius:0;}
+  .obs-panel-header{border-radius:0;}
+}
+
+/* ═══════════════════════════════════════════════════
+   MOBILE — max-width: 768px
+   Desktop code is NOT touched above this block.
+   ═══════════════════════════════════════════════════ */
+
+
+
+/* ─── PAGE SWITCHER ─────────────────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+
+.switcher {
+  display: flex;
+  gap: 0;
+  margin-left: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.switcher-btn {
+  padding: 5px 14px;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.switcher-btn:last-child { border-right: none; }
+.switcher-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+.switcher-btn.active { background: rgba(255,255,255,0.18); color: white; font-weight: 600; }
+
+/* Hide AM elements that conflict with RB */
+#page-am .mobile-section-bar { display: none; }
+@media(max-width:768px) {
+  #page-am .mobile-section-bar { display: block; }
+}
+
+/* FILTER BAR — Mensal/Trimestral/Semestral + Ano, own row below header */
+.filter-bar{background:var(--red-dark);position:sticky;top:var(--header-h, 64px);z-index:91;}
+.filter-bar-inner{max-width:1400px;margin:0 auto;padding:8px 32px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+
+
+@media (max-width: 768px) {
+
+  /* ── HEADER ─────────────────────────────────── */
+  header { position: sticky; top: 0; z-index: 100; }
+  .header-inner-3col {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 52px;
+    min-height: 52px;
+    gap: 8px;
+  }
+  .header-inner-3col .brand { justify-self: auto; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+  .header-inner-3col .brand > div:last-child { overflow: hidden; }
+  .header-inner-3col .switcher { justify-self: auto; flex: 0 0 auto; margin-left: 0; }
+  .header-inner-3col .header-right { display: none; }
+  .brand-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .brand-sub { display: none; }
+  .brand-logo { width: 26px; height: 26px; flex-shrink: 0; }
+  .brand-logo span { font-size: 13px; }
+  .switcher-btn { padding: 5px 9px; font-size: 10.5px; }
+
+  /* ── FILTER BAR: wrap to 2 rows, stay compact ── */
+/* filter-bar top now uses --header-h CSS variable, set dynamically by JS */
+  .filter-bar-inner { padding: 6px 10px; gap: 4px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
+  .year-toggle { padding: 2px; gap: 1px; flex-shrink: 0; }
+  .year-btn-header { padding: 4px 7px !important; font-size: 10.5px !important; }
+  .period-toggle { padding: 2px; gap: 1px; flex-shrink: 0; }
+  .period-btn { padding: 4px 7px; font-size: 10.5px; }
+
+  /* ── NAV BAR: hidden on mobile ──────────────── */
+  nav { display: none !important; }
+
+  /* ── MAIN CONTENT ───────────────────────────── */
+  main { padding: 14px 12px; }
+
+  /* Scroll offset on mobile — header + filter-bar are taller */
+  [id^="anchor_"] { scroll-margin-top: 158px; }
+
+  /* ── SECTION HEADER ─────────────────────────── */
+  .section-header { margin-bottom: 16px; padding-bottom: 12px; }
+  .section-title { font-size: 18px; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 9px; padding: 2px 7px; }
+
+  /* ── KPI + FUNNEL ROW: stack vertically ─────── */
+  .kpi-funnel-row { flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .kpi-grid-left {
+    flex: 1 1 auto;
+    width: 100%;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .funnel-card {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: unset;
+    padding: 16px 14px;
+  }
+  .kpi-card { padding: 10px 8px; border-radius: 8px; }
+  .kpi-value { font-size: 15px; }
+  .kpi-label { font-size: 9px; letter-spacing: 0.04em; }
+  .kpi-sub { font-size: 9px; margin-top: 2px; }
+
+  /* ── CHARTS: single column ───────────────────── */
+  .charts-grid,
+  .charts-grid-2 { grid-template-columns: 1fr !important; gap: 14px; margin-bottom: 14px; }
+  .chart-card { padding: 16px 12px; border-radius: 12px; }
+  .chart-title { font-size: 13px; }
+  .chart-subtitle { font-size: 10px; margin-bottom: 12px; }
+  .chart-wrap { height: 230px; }
+  .chart-wrap-sm { height: 190px; }
+
+  /* ── PRODUCT DIVIDER ─────────────────────────── */
+  .produto-divider { margin: 32px 0 18px; }
+  .produto-divider-label { font-size: 16px; }
+
+  /* ── SUMMARY TABLE ───────────────────────────── */
+  .table-section { margin-top: 32px; margin-bottom: 32px; }
+  .table-section-title { font-size: 18px; }
+  .table-title-row { margin-bottom: 12px; padding-bottom: 12px; }
+
+  /* Table scroll container — allow horizontal swipe */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+  .summary-table { font-size: 10.5px; }
+  .th-name { padding: 8px 10px; font-size: 9px; min-width: 120px; }
+  .th-val  { padding: 8px 8px;  font-size: 9px; }
+  .td-name { padding: 8px 10px; font-size: 11px; min-width: 120px; }
+  .td-val  { padding: 8px 8px; }
+
+  /* Sticky first column on mobile — ensure it has explicit bg */
+  .td-sticky, .th-sticky {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 3 !important;
+  }
+  .th-sticky { background: var(--red) !important; z-index: 4 !important; }
+  .tr-even .td-sticky  { background: white !important; }
+  .tr-odd  .td-sticky  { background: #FAFAFA !important; }
+  .tr-geral .td-sticky { background: #FFF5F6 !important; }
+  /* Shadow to show it's sticky */
+  .td-sticky::after, .th-sticky::after {
+    content: '';
+    position: absolute;
+    top: 0; right: -6px;
+    width: 6px; height: 100%;
+    background: linear-gradient(to right, rgba(0,0,0,0.06), transparent);
+    pointer-events: none;
+  }
+}
+.print-btn{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;padding:0;}
+.print-btn:hover{border-color:white;background:rgba(255,255,255,0.1);}
+.print-btn-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.5);transition:all 0.2s;}
+.print-btn.active .print-btn-dot{background:#FFD700;box-shadow:0 0 6px #FFD700;}
+.print-btn.active{border-color:#FFD700;}
+body.print-mode{--off-white:#ffffff;--gray-light:#f5f5f5;}
+body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
+.chart-modal-overlay{position:fixed;inset:0;background:rgba(26,18,16,0.65);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);}
+.chart-modal-overlay.open{display:flex;}
+.chart-modal-box{background:white;border-radius:18px;box-shadow:0 32px 80px rgba(0,0,0,0.3);width:min(1300px,96vw);max-height:62vh;display:flex;flex-direction:column;animation:cmin 0.2s ease-out;}
+@keyframes cmin{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
+.chart-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.chart-modal-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text);}
+.chart-modal-close-float{
+  position:fixed; top:16px; right:16px; z-index:301;
+  background:white; border:none; width:36px; height:36px;
+  border-radius:50%; font-size:20px; cursor:pointer;
+  color:var(--text-light); box-shadow:0 2px 12px rgba(0,0,0,0.25);
+  line-height:1; transition:all 0.15s; display:flex;
+  align-items:center; justify-content:center;
+}
+.chart-modal-close-float:hover{background:var(--red);color:white;}
+.chart-modal-close:hover{background:var(--red);color:white;}
+.chart-modal-body{padding:16px 24px;height:44vh;position:relative;display:flex;align-items:stretch;}
+.chart-modal-body canvas{width:100%!important;height:100%!important;flex:1;}
+.chart-card{cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;}
+.chart-card:hover{box-shadow:0 8px 32px rgba(26,18,16,0.14);transform:translateY(-2px);}
+
+
+/* ─── PRINT MODE ─────────────────────────────────────────────────────────── */
+.print-btn{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;padding:0;}
+.print-btn:hover{border-color:white;background:rgba(255,255,255,0.1);}
+.print-btn-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.5);transition:all 0.2s;}
+.print-btn.active .print-btn-dot{background:#FFD700;box-shadow:0 0 6px #FFD700;}
+.print-btn.active{border-color:#FFD700;}
+body.print-mode{--off-white:#ffffff;--gray-light:#f5f5f5;}
+body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
+
+/* ─── CHART MODAL ─────────────────────────────────────────────────────────── */
+.chart-modal-overlay{position:fixed;inset:0;background:rgba(26,18,16,0.65);z-index:300;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);}
+.chart-modal-overlay.open{display:flex;}
+.chart-modal-box{background:white;border-radius:18px;box-shadow:0 32px 80px rgba(0,0,0,0.3);width:min(1300px,96vw);max-height:62vh;display:flex;flex-direction:column;animation:cmin 0.2s ease-out;}
+@keyframes cmin{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
+.chart-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.chart-modal-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text);}
+.chart-modal-close-float{position:fixed;top:16px;right:16px;z-index:301;background:white;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;color:var(--text-light);box-shadow:0 2px 12px rgba(0,0,0,0.25);line-height:1;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.chart-modal-close-float:hover{background:var(--red);color:white;}
+.chart-modal-body{padding:16px 24px;height:44vh;position:relative;display:flex;align-items:stretch;}
+.chart-modal-body canvas{width:100%!important;height:100%!important;flex:1;}
+.chart-card{cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;}
+.chart-card:hover{box-shadow:0 8px 32px rgba(26,18,16,0.14);transform:translateY(-2px);}
+
+</style>
+</head>
+<body>
+
+<!-- SHARED HEADER -->
+<header>
+  <div class="header-inner header-inner-3col">
+    <div class="brand">
+      <div class="brand-logo"><span>L</span></div>
+      <div>
+        <div class="brand-name">Lindenberg Consolidado</div>
+        <div class="brand-sub"><span id="headerSub">Revenue Board</span> · <span id="reportDate">13/08/2026</span></div>
+      </div>
+    </div>
+
+    <!-- Switcher — fixed center -->
+    <div class="switcher">
+      <button class="switcher-btn active" id="sw-rb" onclick="switchPage('rb')">Consolidado</button>
+      <button class="switcher-btn" id="sw-am" onclick="switchPage('am')">Mensal</button>
+      <button class="switcher-btn" id="sw-obs" onclick="toggleObs()">Obs</button>
+    </div>
+
+    <!-- Right side spacer (keeps switcher visually centered) -->
+    <div class="header-right">
+      <button class="print-btn" id="printBtn" onclick="togglePrintMode()" title="Modo impressão"><span class="print-btn-dot"></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- OBSERVAÇÕES — overlay panel -->
+<div class="obs-overlay" id="obsOverlay" onclick="closeObs(event)">
+  <div class="obs-panel" onclick="event.stopPropagation()">
+    <div class="obs-panel-header">
+      <div>
+        <div class="obs-panel-title">Observações da Reunião</div>
+        <div class="obs-panel-date" id="obsDate">13/08/2026</div>
+      </div>
+      <button class="obs-close-btn" onclick="closeObs()" aria-label="Fechar">×</button>
+    </div>
+    <div class="obs-panel-body" id="obsBody">
+      <p class="obs-panel-empty">Sem observações registradas.</p>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: REVENUE BOARD -->
+<div class="page active" id="page-rb">
+  <div class="filter-bar">
+    <div class="filter-bar-inner">
+      <div class="year-toggle">
+        <button class="year-btn year-btn-header" id="hbtn_0" onclick="setGlobalYear(0,this)">Todos</button>
+        <button class="year-btn year-btn-header" id="hbtn_2024" onclick="setGlobalYear(2024,this)">2024</button>
+        <button class="year-btn year-btn-header" id="hbtn_2025" onclick="setGlobalYear(2025,this)">2025</button>
+        <button class="year-btn year-btn-header active" id="hbtn_2026" onclick="setGlobalYear(2026,this)">2026</button>
+      </div>
+      <div class="period-toggle">
+        <button class="period-btn active" id="btn_mensal" onclick="setPeriod('mensal')">Mensal</button>
+        <button class="period-btn" id="btn_trimestral" onclick="setPeriod('trimestral')">Trimestral</button>
+        <button class="period-btn" id="btn_semestral" onclick="setPeriod('semestral')">Semestral</button>
+      </div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-inner" id="navInner">
+      <button class="nav-btn active" id="navbtn_geral" onclick="scrollToSection('geral',this)">Geral</button>
+    </div>
+  </nav>
+  <main id="mainContent"></main>
+  <div id="externalSalesTable" style="max-width:1400px;margin:0 auto;padding:0 32px 32px;"></div>
+  <footer class="app-footer">
+    <p>Dados exclusivos para uso no ambiente corporativo da Lindenberg. Não devem ser divulgados externamente sem autorização prévia.</p>
+    <p class="app-footer-credit">Desenvolvido por Grigoletti Mídias</p>
+  </footer>
+</div>
+
+<!-- PAGE: ANALISE MENSAL -->
+<div class="page" id="page-am">
+  <iframe id="amFrame" src="" style="width:100%;height:calc(100vh - 64px);border:none;display:block;" title="Análise Mensal"></iframe>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// REVENUE BOARD DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DATA = [{"ano": 2025, "mes": "Janeiro", "produto": "Groenlandia", "midia_paga": 20479.26, "leads": 123.0, "cpl": 166.4980488, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Groenlandia", "midia_paga": 14657.34, "leads": 97.0, "cpl": 151.1065979, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Groenlandia", "midia_paga": 16697.36, "leads": 87.0, "cpl": 191.9236782, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Groenlandia", "midia_paga": 19023.64, "leads": 104.0, "cpl": 182.9196154, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Groenlandia", "midia_paga": 19197.34, "leads": 92.0, "cpl": 208.6667391, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Groenlandia", "midia_paga": 21050.91, "leads": 86.0, "cpl": 244.7780233, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Groenlandia", "midia_paga": 18532.11, "leads": 80.0, "cpl": 231.651375, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Groenlandia", "midia_paga": 9596.1, "leads": 60.0, "cpl": 159.935, "visitas": 2.0, "vendas": 1.0, "vgv": 18000000.0}, {"ano": 2025, "mes": "Setembro", "produto": "Groenlandia", "midia_paga": 4460.32, "leads": 30.0, "cpl": 148.6773333, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Groenlandia", "midia_paga": 3813.7, "leads": 26.0, "cpl": 146.6807692, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Groenlandia", "midia_paga": 4277.37, "leads": 23.0, "cpl": 185.9726087, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Groenlandia", "midia_paga": 243.52, "leads": 1.0, "cpl": 243.52, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Praça Itaim", "midia_paga": 76874.95, "leads": 838.0, "cpl": 91.73621718377088, "visitas": 8.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Praça Itaim", "midia_paga": 101631.23, "leads": 1032.0, "cpl": 98.47987403100775, "visitas": 6.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Praça Itaim", "midia_paga": 195521.22, "leads": 1498.0, "cpl": 130.52150867823764, "visitas": 18.0, "vendas": 2.0, "vgv": 10553000.0}, {"ano": 2024, "mes": "Abril", "produto": "Praça Itaim", "midia_paga": 139367.88, "leads": 876.0, "cpl": 159.09575342465754, "visitas": 25.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Praça Itaim", "midia_paga": 124613.07999999999, "leads": 700.0, "cpl": 178.0186857142857, "visitas": 13.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Praça Itaim", "midia_paga": 110111.31, "leads": 706.0, "cpl": 155.9650283286119, "visitas": 19.0, "vendas": 2.0, "vgv": 8836000.0}, {"ano": 2024, "mes": "Julho", "produto": "Praça Itaim", "midia_paga": 113708.87, "leads": 875.0, "cpl": 129.95299428571428, "visitas": 13.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Praça Itaim", "midia_paga": 166024.22999999998, "leads": 1069.0, "cpl": 155.30797942001868, "visitas": 15.0, "vendas": 2.0, "vgv": 10060000.0}, {"ano": 2024, "mes": "Setembro", "produto": "Praça Itaim", "midia_paga": 215110.55, "leads": 1448.0, "cpl": 148.55700966850827, "visitas": 25.0, "vendas": 0.0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Praça Itaim", "midia_paga": 295735.16, "leads": 1960.0, "cpl": 150.88528571428571, "visitas": 22.0, "vendas": 1.0, "vgv": 4250000.0}, {"ano": 2024, "mes": "Novembro", "produto": "Praça Itaim", "midia_paga": 221525.56999999998, "leads": 1172.0, "cpl": 189.01499146757678, "visitas": 21.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Praça Itaim", "midia_paga": 103879.84999999999, "leads": 595.0, "cpl": 174.5879831932773, "visitas": 9.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Guarará", "midia_paga": 7340.96, "leads": 55.0, "cpl": 133.472, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Guarará", "midia_paga": 16765.71, "leads": 83.0, "cpl": 201.996506, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Guarará", "midia_paga": 24698.62, "leads": 91.0, "cpl": 271.4134066, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Guarará", "midia_paga": 12926.45, "leads": 87.0, "cpl": 148.5798851, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Guarará", "midia_paga": 14788.39, "leads": 74.0, "cpl": 199.8431081, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Guarará", "midia_paga": 18620.31, "leads": 70.0, "cpl": 266.0044286, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Guarará", "midia_paga": 19894.94, "leads": 93.0, "cpl": 213.924086, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Guarará", "midia_paga": 38058.36, "leads": 208.0, "cpl": 182.9728846, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Guarará", "midia_paga": 48072.74, "leads": 446.0, "cpl": 107.7864126, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Guarará", "midia_paga": 47778.1, "leads": 244.0, "cpl": 195.8118852, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Guarará", "midia_paga": 55837.32, "leads": 242.0, "cpl": 230.7327273, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Guarará", "midia_paga": 55159.07, "leads": 292.0, "cpl": 188.9009247, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Alto de Pinheiros", "midia_paga": 32596.29, "leads": 183.0, "cpl": 178.1218033, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Alto de Pinheiros", "midia_paga": 22084.59, "leads": 128.0, "cpl": 172.5358594, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Alto de Pinheiros", "midia_paga": 33893.75, "leads": 151.0, "cpl": 224.4619205, "visitas": 2.0, "vendas": 1.0, "vgv": 4009000.0}, {"ano": 2025, "mes": "Abril", "produto": "Alto de Pinheiros", "midia_paga": 20871.53, "leads": 112.0, "cpl": 186.3529464, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Alto de Pinheiros", "midia_paga": 59341.51, "leads": 233.0, "cpl": 254.6845923, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Alto de Pinheiros", "midia_paga": 55816.7, "leads": 208.0, "cpl": 268.3495192, "visitas": 2.0, "vendas": 1.0, "vgv": 4300000.0}, {"ano": 2025, "mes": "Julho", "produto": "Alto de Pinheiros", "midia_paga": 56896.7, "leads": 169.0, "cpl": 336.6668639, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Alto de Pinheiros", "midia_paga": 67939.22, "leads": 342.0, "cpl": 198.6526901, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Alto de Pinheiros", "midia_paga": 54554.4, "leads": 431.0, "cpl": 126.5763341, "visitas": 0, "vendas": 1.0, "vgv": 4330000.0}, {"ano": 2025, "mes": "Outubro", "produto": "Alto de Pinheiros", "midia_paga": 43403.9, "leads": 239.0, "cpl": 181.6062762, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Alto de Pinheiros", "midia_paga": 42634.7, "leads": 226.0, "cpl": 188.649115, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Alto de Pinheiros", "midia_paga": 37471.21, "leads": 195.0, "cpl": 192.1600513, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Jota Residencial", "midia_paga": 13471.24, "leads": 207.0, "cpl": 65.07845410628019, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Jota Residencial", "midia_paga": 11821.8, "leads": 122.0, "cpl": 96.89999999999999, "visitas": 0, "vendas": 1.0, "vgv": 2000000.0}, {"ano": 2024, "mes": "Março", "produto": "Jota Residencial", "midia_paga": 11965.04, "leads": 124.0, "cpl": 96.49225806451614, "visitas": 0, "vendas": 2.0, "vgv": 3650000.0}, {"ano": 2024, "mes": "Abril", "produto": "Jota Residencial", "midia_paga": 13739.380000000001, "leads": 138.0, "cpl": 99.56072463768116, "visitas": 4.0, "vendas": 1.0, "vgv": 1237340.0}, {"ano": 2024, "mes": "Maio", "produto": "Jota Residencial", "midia_paga": 10259.35, "leads": 129.0, "cpl": 79.52984496124031, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Jota Residencial", "midia_paga": 26906.72, "leads": 267.0, "cpl": 100.77423220973783, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Jota Residencial", "midia_paga": 23841.66, "leads": 252.0, "cpl": 94.60976190476191, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Jota Residencial", "midia_paga": 19942.2, "leads": 208.0, "cpl": 95.87596153846154, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Jota Residencial", "midia_paga": 16823.82, "leads": 89.0, "cpl": 189.0316853932584, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Jota Residencial", "midia_paga": 6278.969999999999, "leads": 65.0, "cpl": 96.59953846153846, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Jota Residencial", "midia_paga": 9095.0, "leads": 100.0, "cpl": 90.95, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Jota Residencial", "midia_paga": 9302.34, "leads": 111.0, "cpl": 83.80486486486487, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Jota Studio", "midia_paga": 3729.87, "leads": 69.0, "cpl": 54.05608696, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Jota Studio", "midia_paga": 4148.21, "leads": 80.0, "cpl": 51.852625, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Jota Studio", "midia_paga": 6944.14, "leads": 175.0, "cpl": 39.6808, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Jota Studio", "midia_paga": 5546.83, "leads": 68.0, "cpl": 81.57102941, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Jota Studio", "midia_paga": 5804.87, "leads": 60.0, "cpl": 96.74783333, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Jota Studio", "midia_paga": 6005.9, "leads": 46.0, "cpl": 130.5630435, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Jota Studio", "midia_paga": 6597.74, "leads": 93.0, "cpl": 70.94344086, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Jota Studio", "midia_paga": 6741.49, "leads": 63.0, "cpl": 107.0077778, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Jota Studio", "midia_paga": 6447.73, "leads": 73.0, "cpl": 88.32506849, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Jota Studio", "midia_paga": 6630.66, "leads": 73.0, "cpl": 90.8309589, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Jota Studio", "midia_paga": 6457.78, "leads": 55.0, "cpl": 117.4141818, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Jota Studio", "midia_paga": 3437.14, "leads": 29.0, "cpl": 118.522069, "visitas": 0, "vendas": 1.0, "vgv": 409000.0}, {"ano": 2025, "mes": "Janeiro", "produto": "Mário Amaral", "midia_paga": 104381.58, "leads": 813.0, "cpl": 128.3906273, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Mário Amaral", "midia_paga": 102710.85, "leads": 862.0, "cpl": 119.1541183, "visitas": 8.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Mário Amaral", "midia_paga": 109620.77, "leads": 836.0, "cpl": 131.125323, "visitas": 23.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Mário Amaral", "midia_paga": 99914.76, "leads": 820.0, "cpl": 121.8472683, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Mário Amaral", "midia_paga": 92764.44, "leads": 822.0, "cpl": 112.8521168, "visitas": 12.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Mário Amaral", "midia_paga": 69520.43, "leads": 646.0, "cpl": 107.6167647, "visitas": 4.0, "vendas": 2.0, "vgv": 7208000.0}, {"ano": 2025, "mes": "Julho", "produto": "Mário Amaral", "midia_paga": 68637.77, "leads": 650.0, "cpl": 105.5965692, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Mário Amaral", "midia_paga": 58955.69, "leads": 558.0, "cpl": 105.6553584, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Mário Amaral", "midia_paga": 47600.68, "leads": 577.0, "cpl": 82.49684575, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Mário Amaral", "midia_paga": 40778.36, "leads": 407.0, "cpl": 100.1925307, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Mário Amaral", "midia_paga": 32183.44, "leads": 223.0, "cpl": 144.3203587, "visitas": 2.0, "vendas": 1.0, "vgv": 3502183.0}, {"ano": 2025, "mes": "Dezembro", "produto": "Mário Amaral", "midia_paga": 49442.24, "leads": 296.0, "cpl": 167.0345946, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Cambuí", "midia_paga": 7823.63, "leads": 51.0, "cpl": 153.4045098, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Cambuí", "midia_paga": 7015.63, "leads": 59.0, "cpl": 118.9089831, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Cambuí", "midia_paga": 9240.7, "leads": 73.0, "cpl": 126.5849315, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Cambuí", "midia_paga": 8010.02, "leads": 47.0, "cpl": 170.4259574, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Vista Alto de Pinheiros", "midia_paga": 19599.57, "leads": 93.0, "cpl": 210.7480645, "visitas": 14.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Vista Alto de Pinheiros", "midia_paga": 90902.57, "leads": 405.0, "cpl": 224.4507901, "visitas": 19.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Lindenberg Moema", "midia_paga": 18130.91, "leads": 30.0, "cpl": 604.3636667, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Lindenberg Moema", "midia_paga": 131646.52, "leads": 397.0, "cpl": 331.6033249, "visitas": 10.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Vista Alto de Pinheiros", "midia_paga": 53964.02, "leads": 152.0, "cpl": 355.0264474, "visitas": 9.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Julho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Lindenberg Institucional", "midia_paga": 12644.96, "leads": 220.0, "cpl": 57.47709091, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Lindenberg Institucional", "midia_paga": 9877.29, "leads": 106.0, "cpl": 93.18198113, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Lindenberg Institucional", "midia_paga": 22432.44, "leads": 238.0, "cpl": 94.25394958, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Lindenberg Institucional", "midia_paga": 35038.98, "leads": 239.0, "cpl": 146.6066109, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Lindenberg Institucional", "midia_paga": 25405.0, "leads": 177.0, "cpl": 143.5310734, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Studios Paraíso", "midia_paga": 13145.82, "leads": 148.0, "cpl": 88.82310811, "visitas": 0, "vendas": 1.0, "vgv": 527800.0}, {"ano": 2025, "mes": "Junho", "produto": "Studios Paraíso", "midia_paga": 28424.76, "leads": 266.0, "cpl": 106.86, "visitas": 0, "vendas": 1.0, "vgv": 548000.0}, {"ano": 2025, "mes": "Julho", "produto": "Studios Paraíso", "midia_paga": 30569.94, "leads": 350.0, "cpl": 87.34268571, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Agosto", "produto": "Studios Paraíso", "midia_paga": 33445.58, "leads": 352.0, "cpl": 95.01585227, "visitas": 0, "vendas": 1.0, "vgv": 485930.0}, {"ano": 2025, "mes": "Setembro", "produto": "Studios Paraíso", "midia_paga": 25752.05, "leads": 281.0, "cpl": 91.64430605, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Studios Paraíso", "midia_paga": 19972.28, "leads": 230.0, "cpl": 86.836, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Studios Paraíso", "midia_paga": 13590.38, "leads": 121.0, "cpl": 112.3171901, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Studios Paraíso", "midia_paga": 17641.57, "leads": 141.0, "cpl": 125.1175177, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Lindenberg Moema", "midia_paga": 120752.72, "leads": 446.0, "cpl": 270.746009, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Vista Alto de Pinheiros", "midia_paga": 78009.27, "leads": 217.0, "cpl": 359.4897235, "visitas": 5.0, "vendas": 2.0, "vgv": 11511748.0}, {"ano": 2025, "mes": "Outubro", "produto": "Vista Alto de Pinheiros", "midia_paga": 94356.71, "leads": 323.0, "cpl": 292.1260372, "visitas": 6.0, "vendas": 1.0, "vgv": 4374000.0}, {"ano": 2024, "mes": "Janeiro", "produto": "Groenlandia", "midia_paga": 19538.07, "leads": 106.0, "cpl": 184.3214150943396, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Groenlandia", "midia_paga": 42932.68, "leads": 183.0, "cpl": 234.6048087431694, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Groenlandia", "midia_paga": 47391.119999999995, "leads": 163.0, "cpl": 290.74306748466256, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Groenlandia", "midia_paga": 38245.729999999996, "leads": 112.0, "cpl": 341.47973214285713, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Groenlandia", "midia_paga": 42122.19, "leads": 144.0, "cpl": 292.51520833333336, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Groenlandia", "midia_paga": 40421.88, "leads": 162.0, "cpl": 249.51777777777775, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Groenlandia", "midia_paga": 25350.82, "leads": 207.0, "cpl": 122.46772946859903, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Groenlandia", "midia_paga": 43519.91, "leads": 227.0, "cpl": 191.7176651982379, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Groenlandia", "midia_paga": 25495.280000000002, "leads": 114.0, "cpl": 223.64280701754387, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Groenlandia", "midia_paga": 57794.02, "leads": 202.0, "cpl": 286.1090099009901, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Groenlandia", "midia_paga": 52936.649999999994, "leads": 218.0, "cpl": 242.8286697247706, "visitas": 8.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Groenlandia", "midia_paga": 26924.97, "leads": 157.0, "cpl": 171.49662420382165, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Praça Itaim", "midia_paga": 70207.3, "leads": 530.0, "cpl": 132.4666038, "visitas": 14.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Praça Itaim", "midia_paga": 26962.01, "leads": 230.0, "cpl": 117.2261304, "visitas": 11.0, "vendas": 2.0, "vgv": 11995000.0}, {"ano": 2025, "mes": "Março", "produto": "Praça Itaim", "midia_paga": 77210.96, "leads": 472.0, "cpl": 163.5825424, "visitas": 13.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Praça Itaim", "midia_paga": 36488.68, "leads": 240.0, "cpl": 152.0361667, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Praça Itaim", "midia_paga": 34923.68, "leads": 235.0, "cpl": 148.6114043, "visitas": 9.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Junho", "produto": "Praça Itaim", "midia_paga": 35074.6, "leads": 226.0, "cpl": 155.1973451, "visitas": 5.0, "vendas": 1.0, "vgv": 5806900.0}, {"ano": 2025, "mes": "Julho", "produto": "Praça Itaim", "midia_paga": 24171.21, "leads": 158.0, "cpl": 152.9823418, "visitas": 7.0, "vendas": 2.0, "vgv": 10168240.0}, {"ano": 2025, "mes": "Agosto", "produto": "Praça Itaim", "midia_paga": 45113.71, "leads": 344.0, "cpl": 131.1445058, "visitas": 15.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Praça Itaim", "midia_paga": 45677.14, "leads": 354.0, "cpl": 129.0314689, "visitas": 10.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Praça Itaim", "midia_paga": 85634.79, "leads": 638.0, "cpl": 134.2238088, "visitas": 12.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Praça Itaim", "midia_paga": 65028.09, "leads": 288.0, "cpl": 225.7919792, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Praça Itaim", "midia_paga": 64938.26, "leads": 304.0, "cpl": 213.6126974, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Guarará", "midia_paga": 10775.14, "leads": 62.0, "cpl": 173.79258064516128, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Guarará", "midia_paga": 25923.36, "leads": 208.0, "cpl": 124.63153846153847, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Guarará", "midia_paga": 29429.2, "leads": 116.0, "cpl": 253.70000000000002, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Guarará", "midia_paga": 29024.83, "leads": 78.0, "cpl": 372.11320512820515, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Guarará", "midia_paga": 8283.64, "leads": 26.0, "cpl": 318.60153846153844, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Guarará", "midia_paga": 21782.43, "leads": 78.0, "cpl": 279.2619230769231, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Guarará", "midia_paga": 19831.65, "leads": 84.0, "cpl": 236.09107142857144, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Guarará", "midia_paga": 26808.03, "leads": 97.0, "cpl": 276.37144329896904, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Guarará", "midia_paga": 31256.54, "leads": 126.0, "cpl": 248.0677777777778, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Guarará", "midia_paga": 31207.14, "leads": 83.0, "cpl": 375.98963855421687, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Guarará", "midia_paga": 14049.720000000001, "leads": 88.0, "cpl": 159.6559090909091, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Guarará", "midia_paga": 6584.81, "leads": 40.0, "cpl": 164.62025, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Alto de Pinheiros", "midia_paga": 30057.519999999997, "leads": 209.0, "cpl": 143.8158851674641, "visitas": 6.0, "vendas": 1.0, "vgv": 8253352.0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Alto de Pinheiros", "midia_paga": 27827.52, "leads": 120.0, "cpl": 231.89600000000002, "visitas": 3.0, "vendas": 1.0, "vgv": 3840000.0}, {"ano": 2024, "mes": "Março", "produto": "Alto de Pinheiros", "midia_paga": 28799.190000000002, "leads": 138.0, "cpl": 208.68978260869568, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Alto de Pinheiros", "midia_paga": 30520.219999999998, "leads": 134.0, "cpl": 227.7628358208955, "visitas": 0, "vendas": 1.0, "vgv": 4879000.0}, {"ano": 2024, "mes": "Maio", "produto": "Alto de Pinheiros", "midia_paga": 23195.04, "leads": 184.0, "cpl": 126.06, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Alto de Pinheiros", "midia_paga": 18061.92, "leads": 169.0, "cpl": 106.87526627218934, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Alto de Pinheiros", "midia_paga": 16363.0, "leads": 249.0, "cpl": 65.714859437751, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Alto de Pinheiros", "midia_paga": 25643.11, "leads": 200.0, "cpl": 128.21555, "visitas": 3.0, "vendas": 1.0, "vgv": 4053000.0}, {"ano": 2024, "mes": "Setembro", "produto": "Alto de Pinheiros", "midia_paga": 34027.12, "leads": 201.0, "cpl": 169.28915422885572, "visitas": 2.0, "vendas": 1.0, "vgv": 4200000.0}, {"ano": 2024, "mes": "Outubro", "produto": "Alto de Pinheiros", "midia_paga": 28403.89, "leads": 140.0, "cpl": 202.88492857142856, "visitas": 2.0, "vendas": 1.0, "vgv": 4560000.0}, {"ano": 2024, "mes": "Novembro", "produto": "Alto de Pinheiros", "midia_paga": 21119.64, "leads": 106.0, "cpl": 199.24188679245282, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Alto de Pinheiros", "midia_paga": 20522.65, "leads": 98.0, "cpl": 209.41479591836736, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Janeiro", "produto": "Jota Residencial", "midia_paga": 7286.98, "leads": 142.0, "cpl": 51.31676056, "visitas": 0, "vendas": 1.0, "vgv": 2020000.0}, {"ano": 2025, "mes": "Fevereiro", "produto": "Jota Residencial", "midia_paga": 8898.22, "leads": 125.0, "cpl": 71.18576, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Março", "produto": "Jota Residencial", "midia_paga": 14873.68, "leads": 207.0, "cpl": 71.85352657, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Abril", "produto": "Jota Residencial", "midia_paga": 22930.05, "leads": 227.0, "cpl": 101.0134361, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Maio", "produto": "Jota Residencial", "midia_paga": 18522.4, "leads": 196.0, "cpl": 94.50204082, "visitas": 0, "vendas": 1.0, "vgv": 2055000.0}, {"ano": 2025, "mes": "Junho", "produto": "Jota Residencial", "midia_paga": 20699.87, "leads": 220.0, "cpl": 94.09031818, "visitas": 2.0, "vendas": 1.0, "vgv": 1407000.0}, {"ano": 2025, "mes": "Julho", "produto": "Jota Residencial", "midia_paga": 22441.83, "leads": 152.0, "cpl": 147.6436184, "visitas": 5.0, "vendas": 1.0, "vgv": 1981431.6}, {"ano": 2025, "mes": "Agosto", "produto": "Jota Residencial", "midia_paga": 44116.54, "leads": 387.0, "cpl": 113.9962274, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Setembro", "produto": "Jota Residencial", "midia_paga": 43041.99, "leads": 544.0, "cpl": 79.12130515, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Outubro", "produto": "Jota Residencial", "midia_paga": 41501.83, "leads": 386.0, "cpl": 107.5176943, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Novembro", "produto": "Jota Residencial", "midia_paga": 47636.43, "leads": 278.0, "cpl": 171.3540647, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2025, "mes": "Dezembro", "produto": "Jota Residencial", "midia_paga": 33926.16, "leads": 195.0, "cpl": 173.9803077, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Jota Studio", "midia_paga": 6633.75, "leads": 130.0, "cpl": 51.02884615384615, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Jota Studio", "midia_paga": 7067.18, "leads": 83.0, "cpl": 85.14674698795181, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Jota Studio", "midia_paga": 6475.68, "leads": 74.0, "cpl": 87.50918918918919, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Jota Studio", "midia_paga": 6980.91, "leads": 84.0, "cpl": 83.10607142857143, "visitas": 0, "vendas": 2.0, "vgv": 720997.0}, {"ano": 2024, "mes": "Maio", "produto": "Jota Studio", "midia_paga": 6807.71, "leads": 54.0, "cpl": 126.0687037037037, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Jota Studio", "midia_paga": 12245.89, "leads": 109.0, "cpl": 112.34761467889908, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Jota Studio", "midia_paga": 15656.32, "leads": 131.0, "cpl": 119.51389312977099, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Jota Studio", "midia_paga": 8343.68, "leads": 58.0, "cpl": 143.85655172413794, "visitas": 0, "vendas": 2.0, "vgv": 839250.0}, {"ano": 2024, "mes": "Setembro", "produto": "Jota Studio", "midia_paga": 5060.88, "leads": 47.0, "cpl": 107.67829787234042, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Jota Studio", "midia_paga": 5519.88, "leads": 75.0, "cpl": 73.5984, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Jota Studio", "midia_paga": 5770.01, "leads": 55.0, "cpl": 104.90927272727274, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Jota Studio", "midia_paga": 5791.71, "leads": 69.0, "cpl": 83.93782608695652, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Mário Amaral", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Mário Amaral", "midia_paga": 60290.9, "leads": 325.0, "cpl": 185.51046153846156, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Mário Amaral", "midia_paga": 307422.32, "leads": 1405.0, "cpl": 218.80592170818505, "visitas": 40.0, "vendas": 3.0, "vgv": 7422910.52}, {"ano": 2024, "mes": "Dezembro", "produto": "Mário Amaral", "midia_paga": 111832.98000000001, "leads": 811.0, "cpl": 137.89516646115908, "visitas": 6.0, "vendas": 2.0, "vgv": 6235248.25}, {"ano": 2024, "mes": "Janeiro", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Cambuí", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Cambuí", "midia_paga": 6023.94, "leads": 61.0, "cpl": 98.75311475409835, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Cambuí", "midia_paga": 9479.699999999999, "leads": 89.0, "cpl": 106.5134831460674, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Cambuí", "midia_paga": 16594.48, "leads": 94.0, "cpl": 176.53702127659574, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Cambuí", "midia_paga": 7135.66, "leads": 33.0, "cpl": 216.2321212121212, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Janeiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Fevereiro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Março", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Abril", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Maio", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Junho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Julho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Agosto", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Setembro", "produto": "Lindenberg Institucional", "midia_paga": 10959.03, "leads": 49.0, "cpl": 223.65367346938777, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Outubro", "produto": "Lindenberg Institucional", "midia_paga": 18540.91, "leads": 107.0, "cpl": 173.27953271028036, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Novembro", "produto": "Lindenberg Institucional", "midia_paga": 1176.42, "leads": 14.0, "cpl": 84.03, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2024, "mes": "Dezembro", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Praça Itaim", "midia_paga": 90811.61, "leads": 508.0, "cpl": 178.7630118, "visitas": 6.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Guarará", "midia_paga": 33497.84, "leads": 342.0, "cpl": 97.94690058, "visitas": 2.0, "vendas": 1.0, "vgv": 6500000.0}, {"ano": 2026, "mes": "Janeiro", "produto": "Alto de Pinheiros", "midia_paga": 12116.51, "leads": 84.0, "cpl": 144.2441667, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Jota Residencial", "midia_paga": 48049.29, "leads": 386.0, "cpl": 124.4800259, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Jota Studio", "midia_paga": 3158.46, "leads": 32.0, "cpl": 98.701875, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Mário Amaral", "midia_paga": 33529.55, "leads": 272.0, "cpl": 123.2704044, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Lindenberg Institucional", "midia_paga": 27877.47, "leads": 177.0, "cpl": 157.4998305, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Studios Paraíso", "midia_paga": 13617.44, "leads": 182.0, "cpl": 74.8210989, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Lindenberg Moema", "midia_paga": 86772.67, "leads": 393.0, "cpl": 220.795598, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Janeiro", "produto": "Vista Alto de Pinheiros", "midia_paga": 50249.47, "leads": 153.0, "cpl": 328.4279085, "visitas": 7.0, "vendas": 1.0, "vgv": 5350000.0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Praça Itaim", "midia_paga": 85356.82, "leads": 543.0, "cpl": 157.1948803, "visitas": 5.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Guarará", "midia_paga": 21741.36, "leads": 235.0, "cpl": 92.51642553, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Jota Residencial", "midia_paga": 34722.21, "leads": 330.0, "cpl": 105.2188182, "visitas": 15.0, "vendas": 3.0, "vgv": 6033003.0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Jota Studio", "midia_paga": 2698.61, "leads": 30.0, "cpl": 89.95366667, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Mário Amaral", "midia_paga": 16077.71, "leads": 201.0, "cpl": 79.98860697, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Lindenberg Institucional", "midia_paga": 21288.51, "leads": 182.0, "cpl": 116.9698352, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Studios Paraíso", "midia_paga": 5371.9, "leads": 86.0, "cpl": 62.46395349, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Lindenberg Moema", "midia_paga": 53306.43, "leads": 265.0, "cpl": 201.1563396, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Fevereiro", "produto": "Vista Alto de Pinheiros", "midia_paga": 41233.16, "leads": 136.0, "cpl": 303.185, "visitas": 7.0, "vendas": 2.0, "vgv": 10420000.0}, {"ano": 2026, "mes": "Março", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Praça Itaim", "midia_paga": 89199.58, "leads": 777.0, "cpl": 114.7999743, "visitas": 16.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Guarará", "midia_paga": 25908.87, "leads": 376.0, "cpl": 68.90656915, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Jota Residencial", "midia_paga": 41798.41, "leads": 408.0, "cpl": 102.4470833, "visitas": 7.0, "vendas": 1.0, "vgv": 2000000.0}, {"ano": 2026, "mes": "Março", "produto": "Jota Studio", "midia_paga": 1961.88, "leads": 29.0, "cpl": 67.65103448, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Mário Amaral", "midia_paga": 21965.14, "leads": 259.0, "cpl": 84.80749035, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Studios Paraíso", "midia_paga": 7324.75, "leads": 93.0, "cpl": 78.76075269, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Lindenberg Moema", "midia_paga": 84503.3, "leads": 434.0, "cpl": 194.7080645, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Março", "produto": "Vista Alto de Pinheiros", "midia_paga": 50431.68, "leads": 186.0, "cpl": 271.1380645, "visitas": 8.0, "vendas": 2.0, "vgv": 11567458.0}, {"ano": 2026, "mes": "Abril", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Praça Itaim", "midia_paga": 54833.99, "leads": 376.0, "cpl": 145.8350798, "visitas": 8.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Guarará", "midia_paga": 25480.34, "leads": 366.0, "cpl": 69.6184153, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Jota Residencial", "midia_paga": 44728.88, "leads": 418.0, "cpl": 107.00689, "visitas": 10.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Jota Studio", "midia_paga": 4162.6, "leads": 63.0, "cpl": 66.07301587, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Mário Amaral", "midia_paga": 11625.04, "leads": 139.0, "cpl": 83.63338129, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Studios Paraíso", "midia_paga": 3938.18, "leads": 63.0, "cpl": 62.51079365, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Lindenberg Moema", "midia_paga": 81203.66, "leads": 381.0, "cpl": 213.1329659, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Vista Alto de Pinheiros", "midia_paga": 60062.94, "leads": 231.0, "cpl": 260.0127273, "visitas": 8.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Abril", "produto": "Lindenberg Canário", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Praça Itaim", "midia_paga": 80839.48, "leads": 606.0, "cpl": 133.3984818, "visitas": 8.0, "vendas": 1.0, "vgv": 4077000.0}, {"ano": 2026, "mes": "Maio", "produto": "Guarará", "midia_paga": 22199.73, "leads": 137.0, "cpl": 162.0418248, "visitas": 1.0, "vendas": 1.0, "vgv": 6715609.0}, {"ano": 2026, "mes": "Maio", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Jota Residencial", "midia_paga": 34131.79, "leads": 304.0, "cpl": 112.275625, "visitas": 7.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Jota Studio", "midia_paga": 4476.16, "leads": 50.0, "cpl": 89.5232, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Mário Amaral", "midia_paga": 25255.54, "leads": 246.0, "cpl": 102.6647967, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Studios Paraíso", "midia_paga": 6460.59, "leads": 96.0, "cpl": 67.2978125, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Lindenberg Moema", "midia_paga": 87337.54, "leads": 395.0, "cpl": 221.1076962, "visitas": 2.0, "vendas": 2.0, "vgv": 24400940.0}, {"ano": 2026, "mes": "Maio", "produto": "Vista Alto de Pinheiros", "midia_paga": 61705.87, "leads": 209.0, "cpl": 295.2433971, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Maio", "produto": "Lindenberg Canário", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Praça Itaim", "midia_paga": 96093.03, "leads": 602.0, "cpl": 159.6229734, "visitas": 2.0, "vendas": 1.0, "vgv": 3990000.0}, {"ano": 2026, "mes": "Junho", "produto": "Guarará", "midia_paga": 15715.08, "leads": 95.0, "cpl": 165.4218947, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 3.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Jota Residencial", "midia_paga": 12187.82, "leads": 130.0, "cpl": 93.75246154, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Jota Studio", "midia_paga": 2690.06, "leads": 31.0, "cpl": 86.77612903, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Mário Amaral", "midia_paga": 21807.07, "leads": 186.0, "cpl": 117.2423118, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Lindenberg Institucional", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Studios Paraíso", "midia_paga": 4146.27, "leads": 67.0, "cpl": 61.88462687, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Lindenberg Moema", "midia_paga": 51588.39, "leads": 322.0, "cpl": 160.2123913, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Vista Alto de Pinheiros", "midia_paga": 64953.54, "leads": 229.0, "cpl": 283.6399127, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Junho", "produto": "Lindenberg Canário", "midia_paga": 12195.51, "leads": 162.0, "cpl": 75.28092593, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Praça Itaim", "midia_paga": 64866.34, "leads": 457.0, "cpl": 141.9394748, "visitas": 7.0, "vendas": 1.0, "vgv": 5200000.0}, {"ano": 2026, "mes": "Julho", "produto": "Guarará", "midia_paga": 32972.28, "leads": 211.0, "cpl": 156.2667299, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Jota Residencial", "midia_paga": 21632.95, "leads": 153.0, "cpl": 141.3918301, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Jota Studio", "midia_paga": 2524.64, "leads": 32.0, "cpl": 78.895, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Mário Amaral", "midia_paga": 21448.55, "leads": 129.0, "cpl": 166.2678295, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Lindenberg Institucional", "midia_paga": 1853.7, "leads": 14.0, "cpl": 132.4071429, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Studios Paraíso", "midia_paga": 4188.6, "leads": 49.0, "cpl": 85.48163265, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Lindenberg Moema", "midia_paga": 56393.48, "leads": 365.0, "cpl": 154.5026849, "visitas": 4.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Vista Alto de Pinheiros", "midia_paga": 29142.94, "leads": 123.0, "cpl": 236.9344715, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Julho", "produto": "Lindenberg Canário", "midia_paga": 39971.03, "leads": 527.0, "cpl": 75.84635674, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Groenlandia", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Praça Itaim", "midia_paga": 8100.12, "leads": 79.0, "cpl": 102.5331646, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Guarará", "midia_paga": 4279.4, "leads": 22.0, "cpl": 194.5181818, "visitas": 2.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Alto de Pinheiros", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Jota Residencial", "midia_paga": 10156.62, "leads": 92.0, "cpl": 110.3980435, "visitas": 1.0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Jota Studio", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Mário Amaral", "midia_paga": 10209.55, "leads": 73.0, "cpl": 139.8568493, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Lindenberg Institucional", "midia_paga": 4327.0, "leads": 34.0, "cpl": 127.2647059, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Studios Paraíso", "midia_paga": 0.0, "leads": 0.0, "cpl": 0.0, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Lindenberg Moema", "midia_paga": 20308.01, "leads": 82.0, "cpl": 247.6586585, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Vista Alto de Pinheiros", "midia_paga": 7202.22, "leads": 28.0, "cpl": 257.2221429, "visitas": 0, "vendas": 0, "vgv": 0}, {"ano": 2026, "mes": "Agosto", "produto": "Lindenberg Canário", "midia_paga": 38762.29, "leads": 286.0, "cpl": 135.5324825, "visitas": 0, "vendas": 0, "vgv": 0}];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VENDAS EXTERNAS — Vendas de empreendimentos externos geradas pelos nossos leads
+// Somam ao VGV e Vendas do GERAL, mas NÃO aos empreendimentos individuais.
+//
+// Para adicionar novos registros, copie o formato abaixo:
+// { ano: AAAA, mes: 'NomeDoMes', vendas: N, vgv: VALOR, descricao: 'Texto livre' }
+// ═══════════════════════════════════════════════════════════════════════════
+const EXTERNAL_SALES = [{"ano": 2025, "mes": "Janeiro", "vendas": 1, "vgv": 3490000.8, "descricao": "Empreendimento externo"}, {"ano": 2025, "mes": "Março", "vendas": 1, "vgv": 15000000.0, "descricao": "Empreendimento externo"}, {"ano": 2026, "mes": "Abril", "vendas": 1, "vgv": 2891000.0, "descricao": "Vista Alto de Pinheiros — Lindenberg externo"}, {"ano": 2026, "mes": "Junho", "vendas": 1, "vgv": 4440000.0, "descricao": "Groenlandia — Lindenberg Brooklin"}];
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MES_ORDER = {Janeiro:1,Fevereiro:2,Março:3,Abril:4,Maio:5,Junho:6,Julho:7,Agosto:8,Setembro:9,Outubro:10,Novembro:11,Dezembro:12};
+let currentPeriod = 'mensal';
+let globalYear = 2026;
+let charts = {};
+
+const CR = '#C8102E';
+const CT = '#1D6A72';
+const CA = '#C97825';
+const CD = '#1A1210';
+
+function getProducts() {
+  return [...new Set(DATA.map(d => d.produto).filter(p => p && p !== 'Geral'))].sort();
+}
+
+function getGeralRows(yearFilter) {
+  // Build synthetic geral by summing all product rows per ano+mes
+  var map = {};
+  DATA.forEach(function(r) {
+    if (!r.produto || r.produto === 'Geral') return;
+    if (yearFilter && r.ano !== yearFilter) return;
+    var key = r.ano + '_' + r.mes;
+    if (!map[key]) map[key] = {ano:r.ano, mes:r.mes, produto:'Geral', midia_paga:0, leads:0, cpl:0, visitas:0, vendas:0, vgv:0, vgv_externo:0};
+    map[key].midia_paga += r.midia_paga;
+    map[key].leads      += r.leads;
+    map[key].visitas    += r.visitas;
+    map[key].vendas     += r.vendas;
+    map[key].vgv        += r.vgv;
+  });
+  // Add external sales (VGV + vendas only, no midia/leads cost)
+  EXTERNAL_SALES.forEach(function(s) {
+    if (yearFilter && s.ano !== yearFilter) return;
+    var key = s.ano + '_' + s.mes;
+    if (!map[key]) map[key] = {ano:s.ano, mes:s.mes, produto:'Geral', midia_paga:0, leads:0, cpl:0, visitas:0, vendas:0, vgv:0, vgv_externo:0};
+    map[key].vendas      += s.vendas;
+    map[key].vgv         += s.vgv;
+    map[key].vgv_externo += s.vgv;
+  });
+  // recalculate cpl from sums
+  Object.values(map).forEach(function(r){ r.cpl = r.leads>0 ? r.midia_paga/r.leads : 0; });
+  return Object.values(map);
+}
+
+function getRows(produto) {
+  return DATA.filter(d => d.produto === produto);
+}
+
+function sortMonthly(rows) {
+  return [...rows].sort((a,b) => a.ano !== b.ano ? a.ano-b.ano : MES_ORDER[a.mes]-MES_ORDER[b.mes]);
+}
+
+function aggregate(rows, period) {
+  const sorted = sortMonthly(rows);
+  if (period === 'mensal') {
+    return sorted.map(r => ({
+      label: r.mes.substring(0,3)+'/'+String(r.ano).slice(2),
+      midia: r.midia_paga, leads: r.leads,
+      visitas: r.visitas, vendas: r.vendas, vgv: r.vgv,
+      vgv_externo: r.vgv_externo || 0
+    }));
+  }
+  const size = period === 'trimestral' ? 3 : 6;
+  const buckets = {};
+  sorted.forEach(r => {
+    const idx = Math.floor((MES_ORDER[r.mes]-1)/size);
+    const key = r.ano+'-'+idx;
+    if (!buckets[key]) buckets[key] = {ano:r.ano,idx,midia:0,leads:0,visitas:0,vendas:0,vgv:0,vgv_externo:0};
+    buckets[key].midia  += r.midia_paga;
+    buckets[key].leads  += r.leads;
+    buckets[key].visitas+= r.visitas;
+    buckets[key].vendas += r.vendas;
+    buckets[key].vgv    += r.vgv;
+    buckets[key].vgv_externo += (r.vgv_externo || 0);
+  });
+  const pfx = period === 'trimestral' ? 'T' : 'S';
+  return Object.values(buckets)
+    .sort((a,b) => a.ano!==b.ano ? a.ano-b.ano : a.idx-b.idx)
+    .map(b => ({...b, label: pfx+(b.idx+1)+'/'+String(b.ano).slice(2)}));
+}
+
+function withMetrics(agg) {
+  return agg.map(a => ({
+    ...a,
+    vgv_externo: a.vgv_externo||0,
+    cpl:    a.leads>0   ? a.midia/a.leads   : 0,
+    cpv:    a.visitas>0 ? a.midia/a.visitas  : 0,
+    cpvenda:a.vendas>0  ? a.midia/a.vendas   : 0,
+    lpv:    a.visitas>0 ? a.leads/a.visitas  : 0,
+    lpvenda:a.vendas>0  ? a.leads/a.vendas   : 0
+  }));
+}
+
+function fmt(n) {
+  if (!isFinite(n)||isNaN(n)||n===0) return '—';
+  return n.toLocaleString('pt-BR',{maximumFractionDigits:1});
+}
+function fmtBRL(n) {
+  if (!isFinite(n)||isNaN(n)||n===0) return '—';
+  return 'R$ '+n.toLocaleString('pt-BR',{maximumFractionDigits:0});
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#7A6E6C';
+
+// Register datalabels only when needed, unregister for charts that don't use it
+Chart.register(ChartDataLabels);
+
+function fmtLabel(v, pfx) {
+  if (!v || !isFinite(v) || v === 0) return '';
+  if (pfx) return pfx + v.toLocaleString('pt-BR', {maximumFractionDigits:0});
+  return v.toLocaleString('pt-BR', {maximumFractionDigits:1});
+}
+
+// Shared datalabel base style for BAR datasets
+function barDL(color) {
+  return {
+    display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+    anchor: 'end',
+    align: 'end',
+    offset: 2,
+    color: color || '#1A1210',
+    font: { size: 10, weight: '600' },
+    formatter: function(v) { return v > 0 ? v.toLocaleString('pt-BR',{maximumFractionDigits:0}) : ''; },
+    clamp: true
+  };
+}
+
+// Shared datalabel for LINE datasets
+function lineDL(pfx, color) {
+  return {
+    display: function(ctx) {
+      return ctx.dataset.data[ctx.dataIndex] > 0;
+    },
+    anchor: 'top',
+    align: 'top',
+    offset: 4,
+    color: color || '#1A1210',
+    font: { size: 10, weight: '600' },
+    formatter: function(v) {
+      if (!v || !isFinite(v) || v === 0) return '';
+      if (pfx) return pfx + v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+      return v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+    },
+    clamp: true,
+    backgroundColor: function(ctx) {
+      return ctx.dataset.data[ctx.dataIndex] > 0 ? 'rgba(255,255,255,0.85)' : 'transparent';
+    },
+    borderRadius: 3,
+    padding: { top:2, bottom:2, left:4, right:4 }
+  };
+}
+
+function comboChart(id, labels, barVals, lineVals, barLabel, lineLabel, barBg, lineColor, linePfx) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {type:'bar', label:barLabel, data:barVals, backgroundColor:barBg,
+         borderColor:CR, borderWidth:1.5, borderRadius:4, yAxisID:'y', order:2,
+         datalabels: barDL('#5C4F4D')},
+        {type:'line', label:lineLabel, data:lineVals, borderColor:lineColor,
+         borderWidth:2.5, pointBackgroundColor:lineColor, pointRadius:4,
+         tension:0.35, yAxisID:'y1', order:1, fill:false,
+         datalabels: lineDL(linePfx, lineColor)}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,padding:14}},
+        datalabels: {},
+        tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+          callbacks:{label: function(c) {
+            var v=c.parsed.y;
+            if(c.datasetIndex===1) return ' '+lineLabel+': '+(linePfx||'')+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+            return ' '+barLabel+': '+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:1}):'—');
+          }}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},position:'left'},
+        y1:{grid:{display:false},position:'right',min:0,
+          ticks:{callback:function(v){return (linePfx||'')+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}}
+      }
+    }
+  });
+}
+
+function barChart(id, labels, vals, label, color) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type:'bar',
+    data:{labels, datasets:[{
+      label, data:vals,
+      backgroundColor: vals.map(function(v){return v>0?color:'rgba(196,184,181,0.4)';}),
+      borderRadius:6
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels: {
+          display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+          anchor: 'end', align: 'end', offset: 2,
+          color: '#5C4F4D',
+          font: { size: 10, weight: '600' },
+          formatter: function(v) { return v > 0 ? v.toLocaleString('pt-BR',{maximumFractionDigits:1}) : ''; },
+          clamp: true
+        },
+        tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'}}
+      }
+    }
+  });
+}
+
+function tripleChart(id, labels, barVals, line1Vals, line2Vals, extVgvVals) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  var hasExt = extVgvVals && extVgvVals.some(function(v){return v>0;});
+  var datasets = [
+    {type:'bar', label:'Vendas', data:barVals,
+     backgroundColor:'rgba(201,120,37,0.2)', borderColor:CA,
+     borderWidth:1.5, borderRadius:4, yAxisID:'y', order:3,
+     datalabels: barDL('#C97825')},
+    {type:'line', label:'Custo/Venda', data:line1Vals,
+     borderColor:CR, borderWidth:2.5, pointBackgroundColor:CR,
+     pointRadius:4, tension:0.35, yAxisID:'y1', order:1, fill:false,
+     datalabels: lineDL('R$ ', CR)},
+    {type:'line', label:'VGV Total', data:line2Vals,
+     borderColor:CD, borderWidth:2, pointBackgroundColor:CD,
+     pointRadius:3, tension:0.35, yAxisID:'y2', order:2, fill:false, borderDash:[5,3],
+     datalabels: lineDL('R$ ', CD)}
+  ];
+  if (hasExt) {
+    datasets.push({
+      type:'line', label:'VGV Externo ★', data:extVgvVals,
+      borderColor:'rgba(0,0,0,0)',
+      backgroundColor:'rgba(0,0,0,0)',
+      borderWidth:0,
+      pointRadius:0,
+      yAxisID:'y2', order:4,
+      datalabels:{ display: false }
+    });
+  }
+  charts[id] = new Chart(ctx, {
+    data:{labels, datasets:datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,padding:14}},
+        datalabels: {},
+        tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+          callbacks:{label:function(c){
+            var v=c.parsed.y;
+            if(c.datasetIndex===0) return ' Vendas: '+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:1}):'—');
+            return ' '+c.dataset.label+': R$ '+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+          }}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},position:'left'},
+        y1:{grid:{display:false},position:'right',
+          ticks:{callback:function(v){return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}},
+        y2:{display:false}
+      }
+    }
+  });
+}
+
+function renderBlock(prefix, rows) {
+  const agg = withMetrics(aggregate(rows, currentPeriod));
+  if (!agg.length) return;
+  const labels = agg.map(function(a){return a.label;});
+
+  comboChart(prefix+'_c1', labels,
+    agg.map(function(a){return a.leads;}),
+    agg.map(function(a){return a.cpl;}),
+    'Leads', 'CPL', 'rgba(200,16,46,0.18)', CR, 'R$ ');
+
+  comboChart(prefix+'_c2', labels,
+    agg.map(function(a){return a.visitas;}),
+    agg.map(function(a){return a.cpv;}),
+    'Visitas', 'Custo/Visita', 'rgba(29,106,114,0.18)', CT, 'R$ ');
+
+  tripleChart(prefix+'_c3', labels,
+    agg.map(function(a){return a.vendas;}),
+    agg.map(function(a){return a.cpvenda;}),
+    agg.map(function(a){return a.vgv;}),
+    agg.map(function(a){return a.vgv_externo||0;}));
+
+  barChart(prefix+'_c4', labels,
+    agg.map(function(a){return a.lpvenda;}),
+    'Leads/Venda', CR);
+
+  barChart(prefix+'_c5', labels,
+    agg.map(function(a){return a.lpv;}),
+    'Leads/Visita', CT);
+
+  // Chart c6: Investment + cumulative line
+  (function(){
+    var invVals = agg.map(function(a){return a.midia;});
+    var cumVals = [];
+    var acc = 0;
+    invVals.forEach(function(v){ acc+=v; cumVals.push(acc); });
+    destroyChart(prefix+'_c6');
+    var ctx6 = document.getElementById(prefix+'_c6');
+    if(!ctx6) return;
+    charts[prefix+'_c6'] = new Chart(ctx6, {
+      data:{
+        labels: labels,
+        datasets:[
+          {type:'bar', label:'Investimento', data:invVals,
+           backgroundColor:'rgba(200,16,46,0.18)', borderColor:CR,
+           borderWidth:1.5, borderRadius:4, yAxisID:'y', order:2,
+           datalabels:{
+             display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},
+             anchor:'end',align:'end',offset:2,color:'#5C4F4D',
+             font:{size:9,weight:'600'},
+             formatter:function(v){return v>0?'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'';},
+             clamp:true
+           }
+          },
+          {type:'line', label:'Acumulado', data:cumVals,
+           borderColor:CA, borderWidth:2.5, pointBackgroundColor:CA,
+           pointRadius:4, tension:0.35, yAxisID:'y1', order:1, fill:false,
+           datalabels: lineDL('R$ ', CA)
+          }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,padding:14}},
+          datalabels:{},
+          tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+            callbacks:{label:function(c){
+              var v=c.parsed.y;
+              return ' '+c.dataset.label+': R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+            }}
+          }
+        },
+        scales:{
+          x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+          y:{grid:{color:'rgba(0,0,0,0.04)'},position:'left',
+             ticks:{callback:function(v){return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}},
+          y1:{grid:{display:false},position:'right',min:0,
+             ticks:{callback:function(v){return 'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0});}}}
+        }
+      }
+    });
+  })();
+
+  // Update KPIs totals (always mensal to accumulate everything)
+  var all = withMetrics(aggregate(rows, 'mensal'));
+  var tL=0,tV=0,tVd=0,tVGV=0,tM=0;
+  all.forEach(function(a){tL+=a.leads;tV+=a.visitas;tVd+=a.vendas;tVGV+=a.vgv;tM+=a.midia;});
+  function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  set(prefix+'_k1', tL.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  set(prefix+'_k2', tV.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  set(prefix+'_k3', tVd.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  set(prefix+'_k4', tVGV>0?'R$ '+tVGV.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+  set(prefix+'_k5', tL>0?'R$ '+(tM/tL).toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+  set(prefix+'_k6', tVd>0?fmt(tL/tVd)+'x':'—');
+  set(prefix+'_k7', tV>0?fmt(tL/tV)+'x':'—');
+  set(prefix+'_k8', tM>0?'R$ '+tM.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—');
+  set(prefix+'_k9', tVGV>0?(tM/tVGV*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'—');
+
+  // Funnel
+  var pLV  = tL>0  ? (tV/tL*100)   : 0;
+  var pVVd = tV>0  ? (tVd/tV*100)  : 0;
+  var pLVd = tL>0  ? (tVd/tL*100)  : 0;
+  // Width: visitas bar = 50% of leads max, vendas bar = 75% of visitas max
+  // So visitas width (relative to leads) capped at 50%, vendas capped at 50%*75%=37.5%
+  var wV  = tL>0 ? Math.min(100, Math.max(20, (tV/tL)*100)) : 0;
+  var wVd = tV>0 ? Math.min(100, Math.max(10, (tVd/tV)*100)) : 0;
+  // Scale: visitas max display = 50% of card, vendas max = 75% of visitas display
+  var wVdisp  = Math.max(20, Math.min(50, wV * 0.5));
+  var wVddisp = Math.max(10, Math.min(wVdisp * 0.75, wVdisp * (wVd/100)));
+  set(prefix+'_fn1', tL.toLocaleString('pt-BR'));
+  set(prefix+'_fn2', tV.toLocaleString('pt-BR'));
+  set(prefix+'_fn3', tVd.toLocaleString('pt-BR'));
+  set(prefix+'_fr1', pLV.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%');
+  set(prefix+'_fr2', pVVd.toLocaleString('pt-BR',{maximumFractionDigits:2})+'%');
+  set(prefix+'_fconv', pLVd.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%');
+  // Apply widths as right-padding to create funnel shape (bar-inner fills from left)
+  var fb2 = document.getElementById(prefix+'_fb2');
+  var fb3 = document.getElementById(prefix+'_fb3');
+  var fs2 = fb2 ? fb2.parentElement : null;
+  var fs3 = fb3 ? fb3.parentElement : null;
+  if(fs2) fs2.style.paddingRight = (100 - wVdisp)+'%';
+  if(fs3) fs3.style.paddingRight = (100 - wVddisp)+'%';
+
+  // Attach chart modal click — prefix is in scope here
+  setTimeout(function() {
+    ['_c1','_c2','_c3','_c4','_c5','_c6'].forEach(function(sfx) {
+      var cid = prefix + sfx;
+      var el = document.getElementById(cid);
+      if (!el || el.__cm) return;
+      el.__cm = true;
+      var card = el.closest('.chart-card');
+      if (!card) return;
+      var tEl = card.querySelector('.chart-title');
+      var t = tEl ? tEl.textContent.trim() : '';
+      card.addEventListener('click', function() { openChartModal(cid, t); });
+    });
+  }, 300);
+
+  // Chart modal click handlers
+  (function(pfx) {
+    setTimeout(function() {
+      ['_c1','_c2','_c3','_c4','_c5','_c6'].forEach(function(sfx) {
+        var cid = pfx + sfx;
+        var el = document.getElementById(cid);
+        if (!el || el.__cm) return;
+        el.__cm = true;
+        var card = el.closest('.chart-card');
+        if (!card) return;
+        var tEl = card.querySelector('.chart-title');
+        card.addEventListener('click', function() {
+          openChartModal(cid, tEl ? tEl.textContent.trim() : '');
+        });
+      });
+    }, 300);
+  }(prefix));
+}
+
+function blockHTML(prefix, title, isGeral) {
+  var tagHTML = isGeral ? '<span class="tag">Consolidado</span>' : '';
+  return '<div class="section-header"><div class="section-title">'+title+' '+tagHTML+'</div></div>'
+  +'<div class="kpi-funnel-row">'
+  +'<div class="kpi-grid kpi-grid-left">'
+  +'<div class="kpi-card"><div class="kpi-label">Total Leads</div><div class="kpi-value" id="'+prefix+'_k1">...</div><div class="kpi-sub">Período completo</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Visitas</div><div class="kpi-value" id="'+prefix+'_k2">...</div><div class="kpi-sub">Período completo</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Vendas</div><div class="kpi-value red" id="'+prefix+'_k3">...</div><div class="kpi-sub">Período completo</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">VGV Total</div><div class="kpi-value" id="'+prefix+'_k4">...</div><div class="kpi-sub">R$ total</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">CPL Médio</div><div class="kpi-value red" id="'+prefix+'_k5">...</div><div class="kpi-sub">R$ por lead</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Leads / Venda</div><div class="kpi-value" id="'+prefix+'_k6">...</div><div class="kpi-sub">Eficiência</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Leads / Visita</div><div class="kpi-value" id="'+prefix+'_k7">...</div><div class="kpi-sub">Conversão</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Mídia Paga</div><div class="kpi-value" id="'+prefix+'_k8">...</div><div class="kpi-sub">R$ total</div></div>'
+  +'<div class="kpi-card"><div class="kpi-label">Budget / VGV</div><div class="kpi-value red" id="'+prefix+'_k9">...</div><div class="kpi-sub">Quanto menor, melhor</div></div>'
+  +'</div>'
+  +'<div class="funnel-card">'
+  +'<div class="funnel-title">Funil de Conversão</div>'
+  +'<div class="funnel-wrap">'
+  +'<div class="funnel-step fbar-leads"><div class="funnel-bar-inner"><span class="funnel-num" id="'+prefix+'_fn1">—</span><span class="funnel-lbl">Leads</span></div></div>'
+  +'<div class="funnel-arrow-row"><span class="funnel-rate" id="'+prefix+'_fr1">—</span><span class="funnel-rate-lbl">Lead → Visita</span></div>'
+  +'<div class="funnel-step fbar-visitas"><div class="funnel-bar-inner" id="'+prefix+'_fb2"><span class="funnel-num" id="'+prefix+'_fn2">—</span><span class="funnel-lbl">Visitas</span></div></div>'
+  +'<div class="funnel-arrow-row"><span class="funnel-rate" id="'+prefix+'_fr2">—</span><span class="funnel-rate-lbl">Visita → Venda</span></div>'
+  +'<div class="funnel-step fbar-vendas"><div class="funnel-bar-inner" id="'+prefix+'_fb3"><span class="funnel-num" id="'+prefix+'_fn3">—</span><span class="funnel-lbl">Vendas</span></div></div>'
+  +'<div class="funnel-conv-row"><span class="funnel-conv-num" id="'+prefix+'_fconv">—</span><span class="funnel-conv-lbl">Conversão total Lead → Venda</span></div>'
+  +'</div>'
+  +'</div>'
+  +'</div>'
+  +'<div class="charts-grid">'
+  +'<div class="chart-card"><div class="chart-title">Volume de Leads &amp; CPL</div><div class="chart-subtitle">Barras = Leads | Linha = Custo por Lead (R$)</div><div class="chart-wrap"><canvas id="'+prefix+'_c1"></canvas></div></div>'
+  +'<div class="chart-card"><div class="chart-title">Visitas &amp; Custo por Visita</div><div class="chart-subtitle">Barras = Visitas | Linha = Custo por Visita (R$)</div><div class="chart-wrap"><canvas id="'+prefix+'_c2"></canvas></div></div>'
+  +'</div>'
+  +'<div class="charts-grid" style="grid-template-columns:1fr;">'
+  +'<div class="chart-card"><div class="chart-title">Vendas, Custo por Venda &amp; VGV</div><div class="chart-subtitle">Barras = Vendas | Linha vermelha = Custo/Venda | Linha tracejada = VGV (R$)</div><div class="chart-wrap"><canvas id="'+prefix+'_c3"></canvas></div></div>'
+  +'</div>'
+  +'<div class="charts-grid" style="grid-template-columns:1fr;">'
+  +'<div class="chart-card"><div class="chart-title">Investimento em Mídia</div><div class="chart-subtitle">Barras = Investimento total (R$) | Linha = Acumulado</div><div class="chart-wrap"><canvas id="'+prefix+'_c6"></canvas></div></div>'
+  +'</div>'
+  +'<div class="charts-grid">'
+  +'<div class="chart-card"><div class="chart-title">Leads necessários por Venda</div><div class="chart-subtitle">Qtd. de leads para cada venda realizada</div><div class="chart-wrap-sm"><canvas id="'+prefix+'_c4"></canvas></div></div>'
+  +'<div class="chart-card"><div class="chart-title">Leads necessários por Visita</div><div class="chart-subtitle">Qtd. de leads para cada visita realizada</div><div class="chart-wrap-sm"><canvas id="'+prefix+'_c5"></canvas></div></div>'
+  +'</div>';
+}
+
+function filterByYear(rows) {
+  return globalYear===0 ? rows : rows.filter(function(r){return r.ano===globalYear;});
+}
+
+function renderAll() {
+  renderBlock('geral', filterByYear(getGeralRows()));
+  getProducts().forEach(function(p) {
+    var prefix = 'p_'+p.replace(/[^a-zA-Z0-9]/g,'_');
+    renderBlock(prefix, filterByYear(DATA.filter(function(d){return d.produto===p;})));
+  });
+  buildExternalSalesTable();
+}
+
+function buildExternalSalesTable() {
+  var el = document.getElementById('externalSalesTable');
+  if (!el) return;
+  var filtered = EXTERNAL_SALES.filter(function(e){
+    return globalYear === 0 || e.ano === globalYear;
+  });
+  if (!filtered.length) { el.innerHTML = ''; return; }
+  var totalVgv = filtered.reduce(function(s,e){return s+e.vgv;},0);
+  var rows = filtered.map(function(e){
+    return '<tr>'
+      +'<td class="ext-td ext-td-star">★</td>'
+      +'<td class="ext-td">'+e.mes+'/'+e.ano+'</td>'
+      +'<td class="ext-td ext-td-desc">'+e.descricao+'</td>'
+      +'<td class="ext-td ext-td-vgv">R$ '+e.vgv.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<div class="ext-sales-wrap">'
+    +'<div class="ext-sales-title">Vendas de leads em empreendimentos externos</div>'
+    +'<table class="ext-sales-table">'
+    +'<thead><tr>'
+    +'<th class="ext-th"></th>'
+    +'<th class="ext-th">Período</th>'
+    +'<th class="ext-th">Origem / Destino</th>'
+    +'<th class="ext-th ext-th-vgv">VGV</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr>'
+    +'<td class="ext-td" colspan="3" style="font-weight:700;">Total</td>'
+    +'<td class="ext-td ext-td-vgv" style="font-weight:700;">R$ '+totalVgv.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})+'</td>'
+    +'</tr></tfoot>'
+    +'</table>'
+    +'</div>';
+}
+
+function setGlobalYear(year, btn) {
+  globalYear = year;
+  document.querySelectorAll('.year-btn-header').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderAll();
+  buildSummaryTable();
+  setTimeout(function(){
+    document.querySelectorAll('.year-btn-header').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+  }, 200);
+}
+
+
+function setPeriod(p) {
+  currentPeriod = p;
+  ['mensal','trimestral','semestral'].forEach(function(x){
+    document.getElementById('btn_'+x).classList.toggle('active', x===p);
+  });
+  renderAll();
+}
+
+function scrollToSection(id, btn) {
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var el = document.getElementById('anchor_'+id);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+(function init() {
+  var products = getProducts();
+  var nav = document.getElementById('navInner');
+  var main = document.getElementById('mainContent');
+
+  // Build HTML
+  var html = '<div id="anchor_geral" style="padding-top:1px"></div>';
+  html += blockHTML('geral', 'Visao Geral', true);
+
+  products.forEach(function(p) {
+    var prefix = 'p_'+p.replace(/[^a-zA-Z0-9]/g,'_');
+    var safeId = p.replace(/[^a-zA-Z0-9]/g,'_');
+    html += '<div id="anchor_'+safeId+'" class="produto-divider">'
+           +'<div class="produto-divider-line"></div>'
+           +'<div class="produto-divider-dot"></div>'
+           +'<div class="produto-divider-label">'+p+'</div>'
+           +'<div class="produto-divider-dot"></div>'
+           +'<div class="produto-divider-line"></div>'
+           +'</div>';
+    html += blockHTML(prefix, p, false);
+
+    // Nav button
+    var btn = document.createElement('button');
+    btn.className = 'nav-btn';
+    btn.textContent = p;
+    btn.setAttribute('id', 'navbtn_'+safeId);
+    (function(pid, safeId){ 
+      btn.onclick = function(){ scrollToSection(safeId, this); };
+    })(p, safeId);
+    nav.appendChild(btn);
+  });
+
+  main.innerHTML = html;
+  setTimeout(function() { renderAll(); buildSummaryTable(); }, 100);
+})();
+
+// ── SCROLL SPY ──────────────────────────────────────────────────────────────
+(function() {
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function() {
+      ticking = false;
+      var navHeight = 64 + (document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 46);
+      var anchors = document.querySelectorAll('[id^="anchor_"]');
+      var current = null;
+      anchors.forEach(function(el) {
+        var rect = el.getBoundingClientRect();
+        if (rect.top <= navHeight + 30) current = el.id.replace('anchor_', '');
+      });
+      if (current) {
+        document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+        var activeBtn = document.getElementById('navbtn_' + current);
+        if (!activeBtn && current === 'geral') activeBtn = document.querySelector('.nav-btn');
+        if (activeBtn) {
+          activeBtn.classList.add('active');
+        }
+        // Update mobile section bar
+        var mbar = document.getElementById('mobileSectionName');
+        if (mbar) {
+          var label = 'Visão Geral';
+          if (current !== 'geral') {
+            // Try nav button text first
+            var navBtn = document.getElementById('navbtn_' + current);
+            if (navBtn) {
+              label = navBtn.textContent;
+            } else {
+              // Fallback: find the produto-divider-label for this anchor
+              var divLabel = document.querySelector('#anchor_' + current + ' .produto-divider-label');
+              if (divLabel) label = divLabel.textContent;
+              else label = current.replace(/_/g, ' ');
+            }
+          }
+          mbar.textContent = label;
+        }
+      }
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive: true});
+})();
+
+
+function buildSummaryTable() {
+  var products = getProducts();
+
+  function calcRow(rows) {
+    var filtered = globalYear===0 ? rows : rows.filter(function(r){return r.ano===globalYear;});
+    var all = withMetrics(aggregate(filtered, 'mensal'));
+    var tL=0,tV=0,tVd=0,tVGV=0,tM=0;
+    all.forEach(function(a){tL+=a.leads;tV+=a.visitas;tVd+=a.vendas;tVGV+=a.vgv;tM+=a.midia;});
+    return {
+      leads:tL, visitas:tV, vendas:tVd, vgv:tVGV, midia:tM,
+      cpl:     tL>0  ? tM/tL   : 0,
+      cpv:     tV>0  ? tM/tV   : 0,
+      cpvenda: tVd>0 ? tM/tVd  : 0,
+      lpvenda: tVd>0 ? tL/tVd  : 0,
+      lpvisita:tV>0  ? tL/tV   : 0,
+      budgetvgv:tVGV>0 ? tM/tVGV*100 : 0
+    };
+  }
+
+  function n(v,d){return v>0?v.toLocaleString('pt-BR',{maximumFractionDigits:d||0}):'—';}
+  function brl(v){return v>0?'R$ '+v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—';}
+  function xfmt(v){return v>0?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'x':'—';}
+  function bvgv(v){return v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%':'—';}
+
+  var cols = [
+    {label:'Empreendimento',   key:'nome'},
+    {label:'Mídia Paga',       key:'midia',     fmt:brl},
+    {label:'Leads',            key:'leads',     fmt:function(v){return n(v);}},
+    {label:'CPL',              key:'cpl',       fmt:brl},
+    {label:'Visitas',          key:'visitas',   fmt:function(v){return n(v);}},
+    {label:'Cst/Visita',       key:'cpv',       fmt:brl},
+    {label:'Vendas',           key:'vendas',    fmt:function(v){return n(v);}},
+    {label:'Cst/Venda',        key:'cpvenda',   fmt:brl},
+    {label:'VGV',              key:'vgv',       fmt:brl},
+    {label:'Lds/Venda',        key:'lpvenda',   fmt:xfmt},
+    {label:'Lds/Visita',       key:'lpvisita',  fmt:xfmt},
+    {label:'Bdg/VGV',          key:'budgetvgv', fmt:bvgv}
+  ];
+
+  function makeRow(nome, data, isGeral, isEven) {
+    var rc = isGeral ? 'tr-geral' : (isEven ? 'tr-even' : 'tr-odd');
+    var nameCell = isGeral
+      ? '<td class="td-name td-sticky"><span class="badge-geral">Consolidado</span></td>'
+      : '<td class="td-name td-sticky">'+nome+'</td>';
+    var cells = cols.slice(1).map(function(col){
+      return '<td class="td-val">'+col.fmt(data[col.key])+'</td>';
+    }).join('');
+    return '<tr class="'+rc+'">'+nameCell+cells+'</tr>';
+  }
+
+  var geralRow = calcRow(getGeralRows());
+  var tbody = makeRow('Geral', geralRow, true, false);
+  products.forEach(function(p,i){
+    var r = calcRow(DATA.filter(function(d){return d.produto===p;}));
+    if (r.leads>0||r.visitas>0||r.vendas>0)
+      tbody += makeRow(p, r, false, i%2===0);
+  });
+
+  var thead = cols.map(function(col,i){
+    return '<th class="'+(i===0?'th-name th-sticky':'th-val')+'">'+col.label+'</th>';
+  }).join('');
+
+  var html = '<div class="table-section">'
+    +'<div class="table-title-row">'
+    +'<span class="table-section-title">Resumo Consolidado</span>'
+    +'</div>'
+    +'<div class="table-scroll">'
+    +'<table class="summary-table"><thead><tr>'+thead+'</tr></thead><tbody id="summaryTbody">'+tbody+'</tbody></table>'
+    +'</div></div>';
+
+  var el = document.getElementById('summaryTable');
+  if (!el) { el = document.createElement('div'); el.id='summaryTable'; document.getElementById('mainContent').appendChild(el); }
+  el.innerHTML = html;
+}
+
+
+
+
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// EMBEDDED ANALISE MENSAL (srcdoc)
+window.__AM_SRCDOC = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lindenberg — Análise Mensal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"><\/script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#C8102E; --red-dark:#8B0C1F; --red-muted:rgba(200,16,46,0.12);
+  --off-white:#FAF8F7; --white:#FFFFFF; --gray-light:#F0EDEC;
+  --gray:#C4B8B5; --gray-dark:#7A6E6C; --text:#1A1210; --text-light:#5C4F4D;
+  --border:rgba(200,16,46,0.15); --shadow:0 2px 20px rgba(26,18,16,0.07);
+  --green:#1a6b2a; --amber:#C97825;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);}
+
+/* HEADER */
+header{background:var(--red);color:white;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.2);}
+.header-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;}
+.brand{display:flex;align-items:center;gap:14px;}
+.brand-logo{width:36px;height:36px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.brand-logo span{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--red);}
+.brand-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:white;}
+.brand-sub{font-size:11px;opacity:0.7;letter-spacing:0.08em;text-transform:uppercase;color:white;}
+.header-badge{background:rgba(255,255,255,0.15);color:white;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:0.05em;}
+
+/* NAV */
+nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:99;box-shadow:0 2px 8px rgba(26,18,16,0.05);}
+.nav-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;flex-wrap:wrap;gap:0;}
+.nav-btn{padding:13px 20px;border:none;background:transparent;color:var(--text-light);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all 0.2s;}
+.nav-btn:hover{color:var(--red);}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+
+/* MAIN */
+main{max-width:1400px;margin:0 auto;padding:32px;}
+
+/* COVER SECTION */
+.cover{background:var(--red);border-radius:20px;padding:48px 52px;margin-bottom:40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;}
+.cover-left{}
+.cover-eyebrow{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:10px;}
+.cover-title{font-family:'Playfair Display',serif;font-size:40px;font-weight:900;color:white;line-height:1.15;margin-bottom:8px;}
+.cover-sub{font-size:15px;color:rgba(255,255,255,0.75);}
+.cover-kpis{display:flex;gap:16px;flex-wrap:wrap;}
+.cover-kpi{background:rgba(255,255,255,0.12);border-radius:12px;padding:16px 22px;min-width:130px;}
+.cover-kpi-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:white;}
+.cover-kpi-label{font-size:11px;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:0.06em;margin-top:3px;}
+.cover-kpi-delta{font-size:12px;color:rgba(255,255,255,0.85);margin-top:4px;}
+
+/* SECTION */
+.section{margin-bottom:56px;}
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--border);flex-wrap:wrap;gap:8px;}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--text);}
+.section-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;background:var(--red);color:white;padding:3px 10px;border-radius:4px;margin-left:10px;}
+.section-note{font-size:12px;color:var(--gray-dark);}
+
+/* CHARTS GRID */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:22px;margin-bottom:22px;}
+.charts-grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:22px;margin-bottom:22px;}
+.chart-card{background:white;border-radius:14px;padding:26px;box-shadow:var(--shadow);}
+.chart-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.chart-subtitle{font-size:11px;color:var(--gray-dark);margin-bottom:18px;}
+.chart-wrap{position:relative;height:360px;}
+.chart-wrap-sm{position:relative;height:300px;}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:28px;}
+.kpi-card{background:white;border-radius:12px;padding:18px;box-shadow:var(--shadow);border-top:3px solid var(--red);}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-dark);margin-bottom:6px;}
+.kpi-value{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);}
+.kpi-value.red{color:var(--red);}
+.kpi-value.green{color:var(--green);}
+.kpi-sub{font-size:11px;color:var(--gray-dark);margin-top:4px;}
+
+/* LEGEND CHIPS */
+.legend-row{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;}
+.legend-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-light);}
+.legend-dot{width:10px;height:10px;border-radius:2px;}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:40px 0;}
+
+/* ANCHOR */
+[id^="sec-"]{scroll-margin-top:130px;}
+
+@media(max-width:900px){
+  main{padding:16px;}
+  .header-inner{padding:0 16px;}
+  .charts-grid,.charts-grid-3{grid-template-columns:1fr;}
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .cover{padding:28px 24px;}
+  .cover-title{font-size:26px;}
+  .nav-inner{padding:0 8px;}
+}
+
+/* LEADS TABLE */
+.leads-table-wrap{overflow-x:auto;}
+.leads-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
+.leads-table thead tr{background:var(--red);}
+.leads-table th{padding:12px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:white;}
+.lt-mes{text-align:left;}
+.lt-val{text-align:right;}
+.leads-table tbody tr:nth-child(even){background:#FAFAFA;}
+.leads-table tbody tr:nth-child(odd){background:white;}
+.leads-table tbody tr:hover{background:var(--red-muted);}
+.leads-table td{padding:10px 16px;border-bottom:1px solid var(--gray-light);font-variant-numeric:tabular-nums;}
+.leads-table td.lt-mes{font-weight:600;color:var(--text);}
+.leads-table td.lt-sigavi{color:var(--gray-dark);}
+.leads-table td.lt-diff{color:var(--amber);font-weight:600;}
+
+/* VOLUME ROW — chart + table side by side */
+.chart-wrap-leads{position:relative;height:360px;transition:height 0.4s ease;}
+.vol-row{display:grid;grid-template-columns:1fr 220px;gap:20px;align-items:start;}
+.vol-chart{}
+.vol-table{min-width:0;}
+.vol-table .chart-subtitle{margin-bottom:14px;}
+.leads-table tfoot td{font-weight:700;color:var(--text);border-top:2px solid var(--border);background:var(--gray-light);}
+@media(max-width:900px){.vol-row{grid-template-columns:1fr;}}
+
+/* ─── BUDGET BAR CHART ────────────────────────────────────────────────────── */
+.budget-bar-card{display:flex;flex-direction:column;padding:18px 16px 14px;gap:12px;}
+.budget-bar-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.budget-bar-title{font-size:13px;font-weight:700;color:var(--text);}
+.budget-bar-title span{color:var(--gray-dark);font-weight:500;}
+.budget-bar-status{font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;letter-spacing:0.02em;}
+.budget-bar-status.ok{color:#1D6A72;background:rgba(29,106,114,0.1);}
+.budget-bar-status.over{color:var(--red);background:rgba(200,16,46,0.1);}
+.budget-bar-status.under{color:#C97825;background:rgba(201,120,37,0.1);}
+.budget-bar-chart-wrap{flex:1;min-height:180px;position:relative;}
+.budget-bar-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px solid var(--border);padding-top:10px;}
+.budget-bar-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.budget-bar-stat-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-dark);}
+.budget-bar-stat-val{font-size:13px;font-weight:700;color:var(--text);}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="navScrollTo('sec-volume')" data-section="sec-volume">Volume FACs</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-validas')" data-section="sec-validas">FACs Válidas</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-atend')" data-section="sec-atend">Atendimento</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-cpl')" data-section="sec-cpl">CPL</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-invest')" data-section="sec-invest">Investimento</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-google')" data-section="sec-google">Google Ads</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-meta')" data-section="sec-meta">Meta Ads</button>
+    <button class="nav-btn" onclick="navScrollTo('sec-visitas')" data-section="sec-visitas">Visitas</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-left">
+    <div class="cover-eyebrow">Relatório de Performance Digital</div>
+    <div class="cover-title">Análise Mensal<br>Todos os Empreendimentos</div>
+    <div class="cover-sub">Evolução 2025 × 2026 — Geração de leads e investimento</div>
+  </div>
+  <div class="cover-kpis" id="coverKpis">
+    <div class="cover-kpi"><div class="cover-kpi-val" id="ck1">—</div><div class="cover-kpi-label">Leads Totais</div></div>
+    <div class="cover-kpi"><div class="cover-kpi-val" id="ck3">—</div><div class="cover-kpi-label">CPL Médio</div></div>
+    <div class="cover-kpi"><div class="cover-kpi-val" id="ck4">—</div><div class="cover-kpi-label">Investimento</div></div>
+    <div class="cover-kpi"><div class="cover-kpi-val" id="ck5">—</div><div class="cover-kpi-label">Visitas</div></div>
+  </div>
+</div>
+
+<!-- VOL FACS -->
+<div id="sec-volume" class="section">
+  <div class="section-header">
+    <div><span class="section-title">Volume de Leads</span><span class="section-tag">Total — Revenue Board</span></div>
+    <div class="section-note">Comparativo mensal 2025 × 2026</div>
+  </div>
+  <div class="vol-row">
+    <div class="chart-card vol-chart">
+      <div class="chart-title">Volume de FACs (SIGAVI) — 2025 vs 2026</div>
+      <div class="chart-subtitle">Nº de FACs registrados no SIGAVI | Cinza = 2025 | Vermelho = 2026</div>
+      <div class="chart-wrap chart-wrap-leads" id="wrapLeadsVol"><canvas id="c_fac_vol"></canvas></div>
+    </div>
+    <div class="chart-card vol-table">
+      <div class="chart-title">Leads Totais 2026</div>
+      <div class="chart-subtitle">Base Revenue Board — volume bruto de leads captados</div>
+      <table class="leads-table" id="leadsSimpleTable">
+        <thead><tr><th class="lt-mes">Mês</th><th class="lt-val">Leads</th></tr></thead>
+        <tbody id="leadsSimpleBody"></tbody>
+        <tfoot id="leadsSimpleFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FACS VALIDAS -->
+<div id="sec-validas" class="section">
+  <div class="section-header">
+    <div><span class="section-title">FACs Válidas</span><span class="section-tag">Leads Qualificados</span></div>
+    <div class="section-note">Leads que avançaram no funil</div>
+  </div>
+  <div class="charts-grid" style="grid-template-columns:1fr;">
+    <div class="chart-card">
+      <div class="chart-title">FACs Válidas — 2025 vs 2026</div>
+      <div class="chart-subtitle">Leads qualificados por mês</div>
+      <div class="chart-wrap"><canvas id="c_fac_valid"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ATENDIMENTO -->
+<div id="sec-atend" class="section">
+  <div class="section-header">
+    <div><span class="section-title">FACs em Atendimento & Tentando Contato</span><span class="section-tag">Funil</span></div>
+    <div class="section-note">Taxa de aproveitamento dos leads captados</div>
+  </div>
+  <div class="charts-grid" style="grid-template-columns:1fr;">
+    <div class="chart-card">
+      <div class="chart-title">Aproveitamento dos Leads % — 2025 vs 2026 + Tentando Contato</div>
+      <div class="chart-subtitle">% de leads em atendimento e em tentativa de contato por mês</div>
+      <div class="chart-wrap"><canvas id="c_aprov"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- CPL -->
+<div id="sec-cpl" class="section">
+  <div class="section-header">
+    <div><span class="section-title">CPL — Custo por Lead</span><span class="section-tag">Eficiência</span></div>
+    <div class="section-note">Evolução do custo médio por lead gerado</div>
+  </div>
+  <div class="charts-grid" style="grid-template-columns:1fr;">
+    <div class="chart-card">
+      <div class="chart-title">CPL Geral — 2025 vs 2026</div>
+      <div class="chart-subtitle">Custo por lead (R$), calculado sobre o volume total de Leads</div>
+      <div class="chart-wrap"><canvas id="c_cpl"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- INVESTIMENTO -->
+<div id="sec-invest" class="section">
+  <div class="section-header">
+    <div><span class="section-title">Investimento Realizado</span><span class="section-tag">Budget</span></div>
+    <div class="section-note">Mídia paga mensal — 2024 × 2025 × 2026</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:stretch;">
+    <div class="chart-card">
+      <div class="chart-title">Investimento — 2024 vs 2025 vs 2026</div>
+      <div class="chart-subtitle">Linha amarela clara = 2024 | Linha cinza = 2025 | Linha vermelha = 2026 (com valores)</div>
+      <div class="chart-wrap"><canvas id="c_invest"></canvas></div>
+    </div>
+    <div class="chart-card budget-bar-card" id="budgetBarCard">
+      <div class="budget-bar-header">
+        <div class="budget-bar-title">Budget <span id="budgetBarMonth">Agosto/2026</span></div>
+        <div class="budget-bar-status" id="budgetBarStatus"></div>
+      </div>
+      <div class="budget-bar-chart-wrap">
+        <canvas id="budgetBarCanvas"></canvas>
+      </div>
+      <div class="budget-bar-stats">
+        <div class="budget-bar-stat">
+          <span class="budget-bar-stat-label">Investido</span>
+          <span class="budget-bar-stat-val" id="budgetInvestido">—</span>
+        </div>
+        <div class="budget-bar-stat">
+          <span class="budget-bar-stat-label">Meta</span>
+          <span class="budget-bar-stat-val" id="budgetMeta">—</span>
+        </div>
+      </div>
+      <span id="budgetDiaPct" style="display:none"></span>
+      <span id="budgetInvPct" style="display:none"></span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- GOOGLE ADS -->
+<div id="sec-google" class="section">
+  <div class="section-header">
+    <div><span class="section-title">Google Ads</span><span class="section-tag">Canal</span></div>
+    <div class="section-note">Performance do canal Google — FACs e CPL</div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">FACs Google Ads — 2025 vs 2026</div>
+      <div class="chart-subtitle">Volume de leads por mês via Google</div>
+      <div class="chart-wrap"><canvas id="c_g_fac"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CPL Google Ads — 2025 vs 2026</div>
+      <div class="chart-subtitle">Custo por lead Google (R$)</div>
+      <div class="chart-wrap"><canvas id="c_g_cpl"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- META ADS -->
+<div id="sec-meta" class="section">
+  <div class="section-header">
+    <div><span class="section-title">Meta Ads</span><span class="section-tag">Canal</span></div>
+    <div class="section-note">Performance do canal Meta (Facebook + Instagram)</div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">FACs Meta Ads — 2025 vs 2026</div>
+      <div class="chart-subtitle">Volume de leads por mês via Meta</div>
+      <div class="chart-wrap"><canvas id="c_m_fac"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CPL Meta Ads — 2025 vs 2026</div>
+      <div class="chart-subtitle">Custo por lead Meta (R$)</div>
+      <div class="chart-wrap"><canvas id="c_m_cpl"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- VISITAS -->
+<div id="sec-visitas" class="section">
+  <div class="section-header">
+    <div><span class="section-title">Visitas</span><span class="section-tag">Conversão</span></div>
+    <div class="section-note">Visitas agendadas e realizadas — 2025 × 2026</div>
+  </div>
+  <div class="charts-grid" style="grid-template-columns:1fr;">
+    <div class="chart-card">
+      <div class="chart-title">Visitas Totais — 2025 vs 2026</div>
+      <div class="chart-subtitle">Visitas realizadas por mês (todos os empreendimentos)</div>
+      <div class="chart-wrap"><canvas id="c_vis"></canvas></div>
+    </div>
+  </div>
+</div>
+
+
+</main>
+
+<script>
+const D = {"geral": {"Janeiro": {"fac_25": 1490.0, "fac_26": 1970.0, "valid_25": 556.0, "valid_26": 513.0, "aprov_25": 37.32, "aprov_26": 26.04, "tentando": 26.32, "cpl_25": 114.02, "cpl_26": 158.04, "invest_25": 266697.78, "invest_26": 399680.31}, "Fevereiro": {"fac_25": 1157.0, "fac_26": 1582.0, "valid_25": 512.0, "valid_26": 394.0, "aprov_25": 44.25, "aprov_26": 24.91, "tentando": 33.5, "cpl_25": 114.02, "cpl_26": 140.34, "invest_25": 280835.36, "invest_26": 281796.71}, "Março": {"fac_25": 1394.0, "fac_26": 2016.0, "valid_25": 556.0, "valid_26": 488.0, "aprov_25": 39.89, "aprov_26": 24.21, "tentando": 27.66, "cpl_25": 134.62, "cpl_26": 126.11, "invest_25": 408581.6, "invest_26": 323093.61}, "Abril": {"fac_25": 1185.0, "fac_26": 1557.0, "valid_25": 492.0, "valid_26": 413.0, "aprov_25": 41.52, "aprov_26": 26.53, "tentando": 22.76, "cpl_25": 187.33, "cpl_26": 140.42, "invest_25": 319400.49, "invest_26": 286035.63}, "Maio": {"fac_25": 1292.0, "fac_26": 1472.0, "valid_25": 529.0, "valid_26": 407.0, "aprov_25": 40.94, "aprov_26": 27.65, "tentando": 28.75, "cpl_25": 150.54, "cpl_26": 157.81, "invest_25": 339914.8, "invest_26": 322406.7}, "Junho": {"fac_25": 1265.0, "fac_26": 1788.0, "valid_25": 515.0, "valid_26": 535.0, "aprov_25": 40.71, "aprov_26": 29.92, "tentando": 28.22, "cpl_25": 146.6, "cpl_26": 154.26, "invest_25": 336457.04, "invest_26": 281376.77}, "Julho": {"fac_25": 1073.0, "fac_26": 1812.0, "valid_25": 384.0, "valid_26": 554.0, "aprov_25": 35.79, "aprov_26": 30.57, "tentando": 25.99, "cpl_25": 132.19, "cpl_26": 133.49, "invest_25": 338679.73, "invest_26": 274994.51}, "Agosto": {"fac_25": 1836.0, "fac_26": 542.0, "valid_25": 594.0, "valid_26": 237.0, "aprov_25": 32.35, "aprov_26": 43.73, "tentando": 58.23, "cpl_25": 136.45, "cpl_26": 148.48, "invest_25": 432947.4, "invest_26": 103345.21}, "Setembro": {"fac_25": 2397.0, "fac_26": 0, "valid_25": 626.0, "valid_26": 0, "aprov_25": 26.12, "aprov_26": 0, "tentando": 0, "cpl_25": 133.71, "cpl_26": 0, "invest_25": 519602.15, "invest_26": 0}, "Outubro": {"fac_25": 2152.0, "fac_26": 0, "valid_25": 330.0, "valid_26": 0, "aprov_25": 15.33, "aprov_26": 0, "tentando": 0, "cpl_25": 156.27, "cpl_26": 0, "invest_25": 599311.19, "invest_26": 0}, "Novembro": {"fac_25": 1745.0, "fac_26": 0, "valid_25": 467.0, "valid_26": 0, "aprov_25": 26.76, "aprov_26": 0, "tentando": 0, "cpl_25": 205.51, "cpl_26": 0, "invest_25": 606251.08, "invest_26": 0}, "Dezembro": {"fac_25": 1727.0, "fac_26": 0, "valid_25": 562.0, "valid_26": 0, "aprov_25": 32.54, "aprov_26": 0, "tentando": 0, "cpl_25": 200.3, "cpl_26": 0, "invest_25": 500743.93, "invest_26": 0}}, "google": {"Janeiro": {"fac_25": 773.0, "fac_26": 457.0, "vis_25": 0, "vis_26": 0, "cpl_25": 88.99, "cpl_26": 226.83, "invest_25": 68790.17, "invest_26": 103663.31}, "Fevereiro": {"fac_25": 808.0, "fac_26": 392.0, "vis_25": 0, "vis_26": 0, "cpl_25": 93.56, "cpl_26": 193.72, "invest_25": 75594.7, "invest_26": 75938.29}, "Março": {"fac_25": 936.0, "fac_26": 352.0, "vis_25": 0, "vis_26": 0, "cpl_25": 88.36, "cpl_26": 208.16, "invest_25": 82701.21, "invest_26": 73272.26}, "Abril": {"fac_25": 819.0, "fac_26": 366.0, "vis_25": 0, "vis_26": 0, "cpl_25": 146.05, "cpl_26": 212.94, "invest_25": 119617.57, "invest_26": 77935.31}, "Maio": {"fac_25": 588.0, "fac_26": 395.0, "vis_25": 0, "vis_26": 0, "cpl_25": 163.23, "cpl_26": 210.13, "invest_25": 95981.94, "invest_26": 83000.14}, "Junho": {"fac_25": 521.0, "fac_26": 487.0, "vis_25": 0, "vis_26": 0, "cpl_25": 183.68, "cpl_26": 191.92, "invest_25": 95698.8, "invest_26": 93462.64}, "Julho": {"fac_25": 652.0, "fac_26": 477.0, "vis_25": 0, "vis_26": 0, "cpl_25": 152.32, "cpl_26": 170.52, "invest_25": 99315.53, "invest_26": 81337.53}, "Agosto": {"fac_25": 547.0, "fac_26": 167.0, "vis_25": 0, "vis_26": 0, "cpl_25": 184.64, "cpl_26": 254.35, "invest_25": 100999.78, "invest_26": 42476.18}, "Setembro": {"fac_25": 504.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 210.52, "cpl_26": 0, "invest_25": 106102.97, "invest_26": 0}, "Outubro": {"fac_25": 463.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 222.65, "cpl_26": 0, "invest_25": 103086.56, "invest_26": 0}, "Novembro": {"fac_25": 473.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 248.94, "cpl_26": 0, "invest_25": 117747.65, "invest_26": 0}, "Dezembro": {"fac_25": 532.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 262.12, "cpl_26": 0, "invest_25": 149487.19, "invest_26": 0}}, "meta": {"Janeiro": {"fac_25": 1566.0, "fac_26": 2072.0, "vis_25": 0, "vis_26": 0, "cpl_25": 126.38, "cpl_26": 142.87, "invest_25": 197907.61, "invest_26": 296017.0}, "Fevereiro": {"fac_25": 1655.0, "fac_26": 1616.0, "vis_25": 0, "vis_26": 0, "cpl_25": 124.01, "cpl_26": 127.39, "invest_25": 205240.66, "invest_26": 205858.42}, "Março": {"fac_25": 2099.0, "fac_26": 2210.0, "vis_25": 0, "vis_26": 0, "cpl_25": 155.26, "cpl_26": 113.04, "invest_25": 325880.39, "invest_26": 249821.35}, "Abril": {"fac_25": 1433.0, "fac_26": 1671.0, "vis_25": 0, "vis_26": 0, "cpl_25": 139.42, "cpl_26": 124.54, "invest_25": 199782.92, "invest_26": 208100.32}, "Maio": {"fac_25": 1670.0, "fac_26": 1648.0, "vis_25": 0, "vis_26": 0, "cpl_25": 146.07, "cpl_26": 145.27, "invest_25": 243932.86, "invest_26": 239406.56}, "Junho": {"fac_25": 1774.0, "fac_26": 1337.0, "vis_25": 0, "vis_26": 0, "cpl_25": 135.71, "cpl_26": 140.55, "invest_25": 240758.24, "invest_26": 187914.13}, "Julho": {"fac_25": 1910.0, "fac_26": 1583.0, "vis_25": 0, "vis_26": 0, "cpl_25": 125.32, "cpl_26": 122.34, "invest_25": 239364.2, "invest_26": 193656.98}, "Agosto": {"fac_25": 2626.0, "fac_26": 529.0, "vis_25": 0, "vis_26": 0, "cpl_25": 126.41, "cpl_26": 115.06, "invest_25": 331947.62, "invest_26": 60869.03}, "Setembro": {"fac_25": 3382.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 122.26, "cpl_26": 0, "invest_25": 413499.18, "invest_26": 0}, "Outubro": {"fac_25": 3372.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 147.16, "cpl_26": 0, "invest_25": 496224.63, "invest_26": 0}, "Novembro": {"fac_25": 2477.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 197.22, "cpl_26": 0, "invest_25": 488503.43, "invest_26": 0}, "Dezembro": {"fac_25": 1968.0, "fac_26": 0, "vis_25": 0, "vis_26": 0, "cpl_25": 178.48, "cpl_26": 0, "invest_25": 351256.74, "invest_26": 0}}, "invest": {"2024": {"Janeiro": 157350.67, "Fevereiro": 217203.77, "Março": 319581.45, "Abril": 257878.95, "Maio": 215281.01, "Junho": 229530.15, "Julho": 214752.32, "Agosto": 290281.16, "Setembro": 344757.16, "Outubro": 513250.57, "Novembro": 649689.81, "Dezembro": 291974.97}, "2025": {"Janeiro": 253845.87, "Fevereiro": 203242.56, "Março": 293179.98, "Abril": 225711.96, "Maio": 258488.45, "Junho": 255213.48, "Julho": 247742.24, "Agosto": 336211.22, "Setembro": 376386.91, "Outubro": 424433.68, "Novembro": 488295.03, "Dezembro": 486426.16}, "2026": {"Janeiro": 399680.31, "Fevereiro": 281796.71, "Março": 323093.61, "Abril": 286035.63, "Maio": 322406.7, "Junho": 281376.77, "Julho": 274994.51, "Agosto": 103345.21, "Setembro": 0.0, "Outubro": 0.0, "Novembro": 0.0, "Dezembro": 0.0}}, "visitas": {"2025": {"Janeiro": 23.0, "Fevereiro": 24.0, "Março": 47.0, "Abril": 16.0, "Maio": 27.0, "Junho": 20.0, "Julho": 21.0, "Agosto": 52.0, "Setembro": 39.0, "Outubro": 23.0, "Novembro": 37.0, "Dezembro": 22.0}, "2026": {"Janeiro": 22.0, "Fevereiro": 30.0, "Março": 36.0, "Abril": 34.0, "Maio": 19.0, "Junho": 9.0, "Julho": 16.0, "Agosto": 6.0, "Setembro": 0.0, "Outubro": 0.0, "Novembro": 0.0, "Dezembro": 0.0}}, "leads_totais": {"2025": {"Janeiro": 1966, "Fevereiro": 1664, "Março": 2092, "Abril": 1705, "Maio": 1860, "Junho": 1768, "Julho": 1745, "Agosto": 2627, "Setembro": 3247, "Outubro": 2834, "Novembro": 2244, "Dezembro": 2293}, "2026": {"Janeiro": 2529, "Fevereiro": 2008, "Março": 2562, "Abril": 2037, "Maio": 2043, "Junho": 1824, "Julho": 2060, "Agosto": 696, "Setembro": 0, "Outubro": 0, "Novembro": 0, "Dezembro": 0}}, "meses": ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"], "budget": {"agosto": {"meta": 373000, "investido": 103345.21, "dia_atual": 12, "dias_mes": 31}}};
+const MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MES_ABBR = MES.map(function(m){return m.substr(0,3);});
+
+try{ Chart.register(ChartDataLabels); }catch(e){ console.warn("datalabels not loaded", e); }
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 14;
+Chart.defaults.color = '#7A6E6C';
+
+const C_RED  = '#C8102E';
+const C_GRAY = '#9E9E9E';
+const C_TEAL = '#1D6A72';
+const C_AMB  = '#C97825';
+
+function fmt(v,pfx){ return (pfx||'')+(v?v.toLocaleString('pt-BR',{maximumFractionDigits:0}):'—'); }
+function fmtPct(v){ return v?v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%':'0%'; }
+
+// ── Shared chart options ────────────────────────────────────────────────────
+function lineOpts(pfx, sfx) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,padding:14,font:{size:13}}},
+      datalabels:{
+        display:function(ctx){
+          // Only show datalabels for datasets explicitly marked showLabels
+          return ctx.dataset.showLabels && ctx.dataset.data[ctx.dataIndex]>0;
+        },
+        anchor:'top', align:'top', offset:4,
+        color:function(ctx){return ctx.dataset.borderColor||'#1A1210';},
+        font:{size:13,weight:'600'},
+        formatter:function(v){ return v>0?(pfx||'')+v.toLocaleString('pt-BR',{maximumFractionDigits:0})+(sfx||''):''; },
+        backgroundColor:'rgba(255,255,255,0.85)',
+        borderRadius:3, padding:{top:2,bottom:2,left:4,right:4}
+      },
+      tooltip:{backgroundColor:'#1A1210',padding:10,cornerRadius:8,
+        callbacks:{label:function(c){return ' '+c.dataset.label+': '+(pfx||'')+c.parsed.y.toLocaleString('pt-BR',{maximumFractionDigits:0})+(sfx||'');}}
+      }
+    },
+    scales:{
+      x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{maxRotation:45}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},min:0,
+         ticks:{callback:function(v){return (pfx||'')+v.toLocaleString('pt-BR',{maximumFractionDigits:0})+(sfx||'');}}}
+    }
+  };
+}
+
+function lineDataset(label, data, color, dash, showLabels, pointStyleOpts) {
+  var ds = {
+    label:label, data:data,
+    borderColor:color, borderWidth:2.5,
+    pointBackgroundColor:color,
+    pointRadius: (pointStyleOpts && pointStyleOpts.pointRadius!=null) ? pointStyleOpts.pointRadius : 4,
+    pointHoverRadius:6,
+    tension:0.35, fill:false,
+    borderDash: dash||[],
+    showLabels: !!showLabels,
+    datalabels:{color:color}
+  };
+  return ds;
+}
+
+function makeLine(id, labels, datasets, pfx, sfx) {
+  var ctx = document.getElementById(id);
+  if(!ctx) return;
+  new Chart(ctx, {type:'line', data:{labels:labels, datasets:datasets}, options:lineOpts(pfx, sfx)});
+}
+
+// ── BUILD CHARTS ────────────────────────────────────────────────────────────
+window.addEventListener("load", function init(){
+  var g = D.geral, gg = D.google, m = D.meta, inv = D.invest, vis = D.visitas;
+
+  var ltKpi = D.leads_totais;
+
+  // Only use months where we have 2026 data
+  var meses26 = MES.filter(function(ms){ return ltKpi['2026'] && ltKpi['2026'][ms]>0; });
+
+  // Leads chart grows with number of months (base 360px + 30px per month)
+  var nMeses = meses26.length;
+  var leadsH = Math.min(360 + (nMeses - 1) * 40, 700);
+  var wrapEl = document.getElementById('wrapLeadsVol');
+  if (wrapEl) wrapEl.style.height = leadsH + 'px';
+
+
+  // Cover KPIs (baseados no volume TOTAL de leads)
+  var total26 = meses26.reduce(function(s,ms){return s+(ltKpi['2026'][ms]||0);},0);
+  var total25_same = meses26.reduce(function(s,ms){return s+(ltKpi['2025'][ms]||0);},0);
+  var valid26 = meses26.reduce(function(s,ms){return s+(g[ms]?g[ms].valid_26:0);},0);
+  var inv26_total = meses26.reduce(function(s,ms){return s+(inv['2026'][ms]||0);},0);
+  var inv25_t = meses26.reduce(function(s,ms){return s+(inv['2025'][ms]||0);},0);
+  var cpl26_avg = total26>0 ? inv26_total/total26 : 0;
+  var cpl25_avg = total25_same>0 ? inv25_t/total25_same : 0;
+  var vis26_total = meses26.reduce(function(s,ms){return s+(vis['2026']?vis['2026'][ms]||0:0);},0);
+
+  function setEl(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  setEl('ck1', total26.toLocaleString('pt-BR'));
+  setEl('ck2', valid26.toLocaleString('pt-BR'));
+  var valid25s = meses26.reduce(function(s,ms){return s+(g[ms]?g[ms].valid_25:0);},0);
+  setEl('ck3', 'R$ '+cpl26_avg.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  setEl('ck4', 'R$ '+inv26_total.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+  setEl('ck5', vis26_total.toLocaleString('pt-BR',{maximumFractionDigits:0}));
+
+  var lt = D.leads_totais;
+
+  // 1. Volume de FACs (SIGAVI) — o menor número
+  makeLine('c_fac_vol', MES_ABBR,
+    [lineDataset('FACs 2025', MES.map(function(ms){return g[ms]?g[ms].fac_25:0;}), C_GRAY, [5,3], false),
+     lineDataset('FACs 2026', MES.map(function(ms){return g[ms]?g[ms].fac_26:0;}), C_RED, [], true)]);
+
+  // 2. FACs Válidas
+  makeLine('c_fac_valid', MES_ABBR,
+    [lineDataset('Ano 2025', MES.map(function(ms){return g[ms]?g[ms].valid_25:0;}), C_GRAY, [5,3], false),
+     lineDataset('Ano 2026', MES.map(function(ms){return g[ms]?g[ms].valid_26:0;}), C_RED, [], true)]);
+
+  // 3. Aproveitamento + Tentando Contato
+  (function(){
+    var ds25 = lineDataset('Ano 2025', MES.map(function(ms){return g[ms]?g[ms].aprov_25:0;}), C_GRAY, [5,3], false);
+    var ds26 = lineDataset('Ano 2026', MES.map(function(ms){return g[ms]?g[ms].aprov_26:0;}), C_RED, [], true);
+    var dsTc = lineDataset('Tentando Contato', MES.map(function(ms){return g[ms]?g[ms].tentando:0;}), C_AMB, [3,2], false, {pointRadius:3});
+    // Custom datalabels for Tentando Contato: align bottom so it doesn't overlap the red line above
+    dsTc.datalabels = {
+      display: function(ctx){ return ctx.dataset.data[ctx.dataIndex] > 0; },
+      anchor: 'end', align: 'bottom', offset: 4,
+      color: C_AMB,
+      font: {size:13, weight:'600'},
+      formatter: function(v){ return v > 0 ? v.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : ''; },
+      backgroundColor: 'rgba(255,255,255,0.85)',
+      borderRadius: 3, padding: {top:2, bottom:2, left:4, right:4}
+    };
+    makeLine('c_aprov', MES_ABBR, [ds25, ds26, dsTc], '', '%');
+  })();
+
+  // 4. CPL — calculado sobre o volume TOTAL de Leads (Revenue Board), pois o investimento gera leads para outras incorporadoras também
+  makeLine('c_cpl', MES_ABBR,
+    [lineDataset('CPL 2025', MES.map(function(ms){
+        var leads = lt['2025']?lt['2025'][ms]||0:0;
+        return leads>0 ? (inv['2025'][ms]||0)/leads : 0;
+      }), C_GRAY, [5,3], false),
+     lineDataset('CPL 2026', MES.map(function(ms){
+        var leads = lt['2026']?lt['2026'][ms]||0:0;
+        return leads>0 ? (inv['2026'][ms]||0)/leads : 0;
+      }), C_RED, [], true)],
+    'R$ ');
+
+  // 5. Investimento — 2024 (amarelo claro, sem pontos) + 2025 (cinza, com pontos) + 2026 (vermelho, com rótulos)
+  makeLine('c_invest', MES_ABBR,
+    [lineDataset('Ano 2024', MES.map(function(ms){return inv['2024'][ms]||0;}), 'rgba(240,200,80,0.55)', [], false, {pointRadius:0}),
+     lineDataset('Ano 2025', MES.map(function(ms){return inv['2025'][ms]||0;}), C_GRAY, [], false, {pointRadius:4}),
+     lineDataset('Ano 2026', MES.map(function(ms){return inv['2026'][ms]||0;}), C_RED, [], true)],
+    'R$ ');
+
+  // 6. Google FACs
+  makeLine('c_g_fac', MES_ABBR,
+    [lineDataset('Google 2025', MES.map(function(ms){return gg[ms]?gg[ms].fac_25:0;}), C_GRAY, [5,3], false),
+     lineDataset('Google 2026', MES.map(function(ms){return gg[ms]?gg[ms].fac_26:0;}), C_RED, [], true)]);
+
+  // 7. Google CPL
+  makeLine('c_g_cpl', MES_ABBR,
+    [lineDataset('CPL Google 2025', MES.map(function(ms){return gg[ms]?gg[ms].cpl_25:0;}), C_GRAY, [5,3], false),
+     lineDataset('CPL Google 2026', MES.map(function(ms){return gg[ms]?gg[ms].cpl_26:0;}), C_RED, [], true)],
+    'R$ ');
+
+  // 8. Meta FACs
+  makeLine('c_m_fac', MES_ABBR,
+    [lineDataset('Meta 2025', MES.map(function(ms){return m[ms]?m[ms].fac_25:0;}), C_GRAY, [5,3], false),
+     lineDataset('Meta 2026', MES.map(function(ms){return m[ms]?m[ms].fac_26:0;}), C_RED, [], true)]);
+
+  // 9. Meta CPL
+  makeLine('c_m_cpl', MES_ABBR,
+    [lineDataset('CPL Meta 2025', MES.map(function(ms){return m[ms]?m[ms].cpl_25:0;}), C_GRAY, [5,3], false),
+     lineDataset('CPL Meta 2026', MES.map(function(ms){return m[ms]?m[ms].cpl_26:0;}), C_RED, [], true)],
+    'R$ ');
+
+  // 10. Visitas total
+  makeLine('c_vis', MES_ABBR,
+    [lineDataset('Visitas 2025', MES.map(function(ms){return vis['2025']?vis['2025'][ms]||0:0;}), C_GRAY, [5,3], false),
+     lineDataset('Visitas 2026', MES.map(function(ms){return vis['2026']?vis['2026'][ms]||0:0;}), C_RED, [], true)]);
+
+  // 11. Tabela simples Leads Totais 2026
+  (function(){
+    var lt = D.leads_totais;
+    var tbody = document.getElementById('leadsSimpleBody');
+    var tfoot = document.getElementById('leadsSimpleFoot');
+    if(!tbody) return;
+    var rows = '';
+    var total = 0;
+    MES.forEach(function(ms){
+      var v = lt['2026'] ? (lt['2026'][ms]||0) : 0;
+      if (v === 0) return;
+      total += v;
+      rows += '<tr><td class="lt-mes">'+ms+'</td><td class="lt-val">'+v.toLocaleString('pt-BR')+'</td></tr>';
+    });
+    tbody.innerHTML = rows;
+    if (tfoot) tfoot.innerHTML = '<tr><td class="lt-mes">Total</td><td class="lt-val">'+total.toLocaleString('pt-BR')+'</td></tr>';
+  })();
+
+  // Scroll spy
+  window.addEventListener('scroll', function(){
+    var sections = document.querySelectorAll('[id^="sec-"]');
+    var current = null;
+    sections.forEach(function(el){
+      if(el.getBoundingClientRect().top <= 130) current = el.id;
+    });
+    if(current){
+      document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+      var btn = document.querySelector('.nav-btn[data-section="' + current + '"]');
+      if(btn) btn.classList.add('active');
+    }
+  },{passive:true});
+
+});
+
+function navScrollTo(id) {
+  var el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  var btn = document.querySelector('.nav-btn[data-section="' + id + '"]');
+  if(btn) btn.classList.add('active');
+}
+
+// ─── BUDGET BAR CHART ─────────────────────────────────────────────────────────
+function drawBudgetBar() {
+  var b = D.budget;
+  if (!b) return;
+
+  var meses26 = MES.filter(function(ms){ return D.leads_totais['2026'] && D.leads_totais['2026'][ms]>0; });
+  var lastMes = meses26[meses26.length - 1] || 'Agosto';
+  var mesKey = lastMes.toLowerCase()
+    .replace(/ç/g,'c').replace(/ã/g,'a').replace(/á/g,'a').replace(/â/g,'a')
+    .replace(/é/g,'e').replace(/ê/g,'e').replace(/ó/g,'o').replace(/ô/g,'o')
+    .replace(/ú/g,'u').replace(/í/g,'i');
+
+  var info = b[mesKey];
+  if (!info) return;
+
+  var investido  = info.investido;
+  var meta       = info.meta;
+  var diaAtual   = info.dia_atual;
+  var diasMes    = info.dias_mes;
+  var pctDia     = Math.round(diaAtual / diasMes * 100);
+  var pctInvest  = Math.round(investido / meta * 100);
+
+  document.getElementById('budgetBarMonth').textContent = lastMes + '/2026';
+
+  var diff = pctInvest - pctDia;
+  var status, statusClass;
+  if (Math.abs(diff) <= 5)  { status = 'No ritmo ✓'; statusClass = 'ok'; }
+  else if (diff > 0)        { status = 'Acima ↑';    statusClass = 'over'; }
+  else                      { status = 'Abaixo ↓';   statusClass = 'under'; }
+
+  var el = document.getElementById('budgetBarStatus');
+  el.textContent = status; el.className = 'budget-bar-status ' + statusClass;
+
+  var fmtBRL = function(v){ return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); };
+  document.getElementById('budgetInvestido').textContent = fmtBRL(investido);
+  document.getElementById('budgetMeta').textContent      = fmtBRL(meta);
+  document.getElementById('budgetDiaPct').textContent    = pctDia + '%';
+  document.getElementById('budgetInvPct').textContent    = pctInvest + '%';
+
+  var C_INV = diff > 5 ? '#C8102E' : diff < -5 ? '#C97825' : '#1D6A72';
+
+  var canvas = document.getElementById('budgetBarCanvas');
+  if (!canvas) return;
+  if (canvas.__budgetChart) { canvas.__budgetChart.destroy(); }
+
+  canvas.__budgetChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: ['% do mês', '% do budget'],
+      datasets: [{
+        data: [pctDia, pctInvest],
+        backgroundColor: ['rgba(136,135,128,0.3)', C_INV + 'CC'],
+        borderColor:     ['rgba(136,135,128,0.7)', C_INV],
+        borderWidth: [1.5, 1.5],
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          offset: 6,
+          font: { size: 14, weight: '700', family: "'DM Sans', sans-serif" },
+          color: function(ctx){ return ctx.dataIndex === 0 ? '#888780' : C_INV; },
+          formatter: function(v){ return v + '%'; }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx){
+              if (ctx.dataIndex === 0) return 'Dia ' + diaAtual + ' de ' + diasMes;
+              return fmtBRL(investido) + ' de ' + fmtBRL(meta);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 110,
+          ticks: {
+            callback: function(v){ return v <= 100 ? v + '%' : ''; },
+            font: { size: 11 },
+            color: '#888780',
+            maxTicksLimit: 6,
+            stepSize: 25
+          },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { size: 12, weight: '600' },
+            color: '#5C4F4D'
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
+window.addEventListener('load', function() {
+  setTimeout(drawBudgetBar, 200);
+});
+
+<\/script>
+</body>
+</html>`;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PAGE SWITCHER
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DYNAMIC STICKY OFFSETS — measure real header/filter-bar height at any
+// breakpoint and expose as CSS variables, so sticky elements never overlap
+// regardless of how the header wraps (mobile / tablet / desktop).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── PRINT MODE ───────────────────────────────────────────────────────────────
+function togglePrintMode() {
+  document.body.classList.toggle('print-mode');
+  document.getElementById('printBtn').classList.toggle('active',
+    document.body.classList.contains('print-mode'));
+}
+
+// ─── CHART MODAL ──────────────────────────────────────────────────────────────
+var __modalChart = null;
+
+function openChartModal(canvasId, title) {
+  var origChart = charts[canvasId];
+  if (!origChart) return;
+  document.getElementById('chartModalTitle').textContent = title || '';
+  document.getElementById('chartModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  var body = document.getElementById('chartModalBody');
+  body.innerHTML = '<canvas id="chartModalCanvas" style="width:100%;height:100%;"></canvas>';
+  var mc = document.getElementById('chartModalCanvas');
+  if (__modalChart) { try { __modalChart.destroy(); } catch(e){} __modalChart = null; }
+  var cfg = origChart.config;
+  var prevMAR = cfg.options.maintainAspectRatio;
+  cfg.options.maintainAspectRatio = false;
+  cfg.options.responsive = true;
+  var clonedData = JSON.parse(JSON.stringify(cfg.data));
+  var origDatasets = cfg.data.datasets;
+  clonedData.datasets.forEach(function(ds, i) {
+    if (origDatasets[i] && origDatasets[i].datalabels) ds.datalabels = origDatasets[i].datalabels;
+  });
+  __modalChart = new Chart(mc, {type:cfg.type, data:clonedData, options:cfg.options, plugins:cfg.plugins});
+  setTimeout(function() { cfg.options.maintainAspectRatio = prevMAR; }, 50);
+}
+
+function closeChartModal() {
+  document.getElementById('chartModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  if (__modalChart) { try { __modalChart.destroy(); } catch(e){} __modalChart = null; }
+  var body = document.getElementById('chartModalBody');
+  if (body) body.innerHTML = '';
+}
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeChartModal(); });
+document.addEventListener('DOMContentLoaded', function() {
+  var ov = document.getElementById('chartModalOverlay');
+  if (ov) ov.addEventListener('click', function(e) { if (e.target === this) closeChartModal(); });
+});
+
+function syncStickyOffsets() {
+  var header = document.querySelector('header');
+  var filterBar = document.querySelector('.filter-bar');
+  if (!header) return;
+  var headerH = header.offsetHeight;
+  var filterH = (filterBar && getComputedStyle(filterBar).display !== 'none') ? filterBar.offsetHeight : 0;
+  document.documentElement.style.setProperty('--header-h', headerH + 'px');
+  document.documentElement.style.setProperty('--header-filter-h', (headerH + filterH) + 'px');
+}
+window.addEventListener('load', syncStickyOffsets);
+window.addEventListener('resize', syncStickyOffsets);
+// Re-measure shortly after load too, in case fonts/webfonts shift heights
+setTimeout(syncStickyOffsets, 300);
+setTimeout(syncStickyOffsets, 1000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OBSERVAÇÕES PANEL
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleObs() {
+  var overlay = document.getElementById('obsOverlay');
+  var btn = document.getElementById('sw-obs');
+  var isOpen = overlay.classList.contains('open');
+  if (isOpen) {
+    overlay.classList.remove('open');
+    btn.classList.remove('active');
+  } else {
+    overlay.classList.add('open');
+    btn.classList.add('active');
+  }
+}
+function closeObs(evt) {
+  if (evt && evt.target.id !== 'obsOverlay') return;
+  document.getElementById('obsOverlay').classList.remove('open');
+  document.getElementById('sw-obs').classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeObs();
+});
+
+function switchPage(page) {
+  document.getElementById('page-rb').classList.toggle('active', page === 'rb');
+  document.getElementById('page-am').classList.toggle('active', page === 'am');
+  document.getElementById('sw-rb').classList.toggle('active', page === 'rb');
+  document.getElementById('sw-am').classList.toggle('active', page === 'am');
+  document.getElementById('headerSub').textContent = page === 'rb' ? 'Revenue Board' : 'Análise Mensal';
+  window.scrollTo(0, 0);
+  setTimeout(syncStickyOffsets, 50);
+  if (page === 'rb') {
+    setTimeout(renderAll, 50);
+  } else if (page === 'am') {
+    // Load AM via srcdoc (single file, no CSP issues)
+    var frame = document.getElementById('amFrame');
+    if (frame && !frame.__loaded) {
+      frame.__loaded = true;
+      frame.srcdoc = window.__AM_SRCDOC;
+    }
+  }
+}
+</script>
+
+
+<div class="chart-modal-overlay" id="chartModalOverlay">
+  <button class="chart-modal-close-float" onclick="closeChartModal()" title="Fechar">×</button>
+  <div class="chart-modal-box" onclick="event.stopPropagation()">
+    <div class="chart-modal-header">
+      <div class="chart-modal-title" id="chartModalTitle"></div>
+    </div>
+    <div class="chart-modal-body" id="chartModalBody"></div>
+  </div>
+</div>
+
+<script id="reuniao-meta" type="application/json">{"data": "13/08/2026", "facs": 542, "validas": 237, "aprov": 43.73, "cpl": 148, "invest": 103345, "leads": 696, "visitas": 6, "mes_ref": "Agosto/2026", "obs_grupos": []}</script>
+</body>
+</html>
