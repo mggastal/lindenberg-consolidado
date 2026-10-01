@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lindenberg — Novos Leads x Retorno</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#C8102E; --red-dark:#8B0C1F; --red-light:#E8374F;
+  --red-muted:rgba(200,16,46,0.12); --white:#FFFFFF; --off-white:#FAF8F7;
+  --gray-light:#F0EDEC; --gray:#C4B8B5; --gray-dark:#7A6E6C;
+  --text:#1A1210; --text-light:#5C4F4D;
+  --border:rgba(200,16,46,0.18); --shadow:0 2px 24px rgba(26,18,16,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--text);}
+
+header{background:var(--red);color:white;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,0.25);}
+.header-inner{max-width:1400px;margin:0 auto;padding:0 32px;height:64px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:16px;}
+.brand{display:flex;align-items:center;gap:14px;justify-self:start;}
+.brand-logo{width:36px;height:36px;background:white;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.brand-logo span{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:var(--red);line-height:1;}
+.brand-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:0.04em;}
+.brand-sub{font-size:11px;opacity:0.7;letter-spacing:0.08em;text-transform:uppercase;}
+.year-toggle{display:flex;background:rgba(255,255,255,0.15);border-radius:8px;padding:3px;gap:2px;justify-self:center;}
+.year-btn{padding:6px 14px;border:none;background:transparent;color:rgba(255,255,255,0.75);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.year-btn:hover{color:white;background:rgba(255,255,255,0.12);}
+.year-btn.active{background:white;color:var(--red);font-weight:600;}
+.header-right{justify-self:end;font-size:11px;opacity:0.8;letter-spacing:0.04em;text-align:right;}
+
+.filter-bar{background:white;border-bottom:1px solid var(--border);}
+.filter-inner{max-width:1400px;margin:0 auto;padding:12px 32px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;}
+.f-group{display:flex;align-items:center;gap:8px;}
+.f-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-dark);}
+.f-select{font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--off-white);color:var(--text);max-width:280px;}
+.seg{display:flex;background:var(--gray-light);border-radius:8px;padding:3px;gap:2px;}
+.seg button{padding:6px 12px;border:none;background:transparent;color:var(--text-light);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;border-radius:6px;cursor:pointer;}
+.seg button.active{background:var(--red);color:white;font-weight:600;}
+.f-clear{font-size:12px;color:var(--red);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline;display:none;}
+
+nav{background:white;border-bottom:1px solid var(--border);position:sticky;top:64px;z-index:90;box-shadow:0 2px 8px rgba(26,18,16,0.06);}
+.nav-inner{max-width:1400px;margin:0 auto;padding:0 32px;display:flex;overflow-x:auto;}
+.nav-btn{padding:14px 20px;border:none;background:transparent;color:var(--text-light);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;}
+.nav-btn:hover{color:var(--red);}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600;}
+
+main{max-width:1400px;margin:0 auto;padding:32px;}
+.section{display:none;}
+.section.active{display:block;}
+.section-header{margin-bottom:24px;padding-bottom:18px;border-bottom:2px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.section-note{font-size:12px;color:var(--gray-dark);max-width:560px;}
+.tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;background:var(--red);color:white;padding:3px 10px;border-radius:4px;}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:26px;}
+.kpi-card{background:white;border-radius:12px;padding:18px;box-shadow:var(--shadow);border-top:3px solid var(--red);}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-dark);margin-bottom:6px;}
+.kpi-value{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
+.kpi-value.red{color:var(--red);}
+.kpi-sub{font-size:11px;color:var(--gray-dark);margin-top:6px;}
+.hl{background:linear-gradient(135deg,var(--red) 0%,var(--red-dark) 100%);color:white;border-radius:14px;padding:24px 28px;box-shadow:var(--shadow);margin-bottom:26px;}
+.hl-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.hl-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.hl-sub{font-size:11px;opacity:.8;letter-spacing:.06em;text-transform:uppercase;}
+.hl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;}
+.hl-year{background:rgba(255,255,255,0.12);border-radius:12px;padding:16px 20px;}
+.hl-year.cur{background:white;color:var(--text);}
+.hl-y{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8;}
+.hl-v{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;line-height:1.1;margin:4px 0;}
+.hl-year.cur .hl-v{color:var(--red);}
+.hl-d{font-size:12px;opacity:.9;}
+.hl-note{font-size:11px;opacity:.8;margin-top:14px;line-height:1.5;}
+.delta-up{color:var(--red);font-weight:700;}
+.delta-down{color:var(--text-light);font-weight:700;}
+
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:22px;margin-bottom:22px;}
+.chart-card{background:white;border-radius:14px;padding:24px;box-shadow:var(--shadow);margin-bottom:22px;}
+.charts-grid .chart-card{margin-bottom:0;}
+.chart-title{font-size:14px;font-weight:600;margin-bottom:3px;}
+.chart-subtitle{font-size:11px;color:var(--gray-dark);margin-bottom:18px;}
+.chart-wrap{position:relative;height:320px;}
+.chart-wrap-lg{position:relative;height:360px;}
+.chart-wrap-sm{position:relative;height:260px;}
+
+.callout{background:white;border-left:4px solid var(--red);border-radius:10px;padding:18px 22px;box-shadow:var(--shadow);margin-bottom:24px;font-size:13.5px;line-height:1.6;color:var(--text-light);}
+.callout b{color:var(--text);}
+.callout h4{font-family:'Playfair Display',serif;font-size:17px;color:var(--text);margin-bottom:6px;}
+
+.table-block{margin-bottom:30px;}
+.table-title-row{display:flex;align-items:baseline;gap:14px;margin:8px 0 14px;flex-wrap:wrap;}
+.table-section-title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;}
+.table-hint{font-size:11px;color:var(--gray-dark);}
+.table-scroll{overflow-x:auto;border-radius:14px;box-shadow:var(--shadow);background:white;}
+.summary-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;}
+.summary-table thead th{background:var(--red);color:rgba(255,255,255,0.92);padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;white-space:nowrap;text-align:right;}
+.summary-table thead tr.grp th{background:var(--red-dark);text-align:center;font-size:11px;}
+.summary-table thead th.th-name{text-align:left;position:sticky;left:0;z-index:3;}
+.summary-table td{padding:9px 12px;text-align:right;color:var(--text-light);border-bottom:1px solid var(--gray-light);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.summary-table td.td-name{text-align:left;color:var(--text);font-weight:500;position:sticky;left:0;background:inherit;z-index:2;}
+.summary-table tbody tr:nth-child(even){background:#FAFAFA;}
+.summary-table tbody tr:nth-child(odd){background:white;}
+.summary-table tbody tr.clickable{cursor:pointer;}
+.summary-table tbody tr:hover{background:#FFF0F2;}
+.summary-table tr.tr-geral td{background:#FFF5F6;font-weight:700;color:var(--red-dark);border-top:2px solid var(--red);}
+.summary-table tr.sel td{background:#FFE6EA;}
+.summary-table td.taxa{color:var(--red);font-weight:600;}
+.summary-table td.grp-start,.summary-table th.grp-start{border-left:1px solid var(--gray-light);}
+.summary-table td.muted{color:var(--gray);}
+.heat td.cell{min-width:58px;}
+.bar-in{display:inline-block;height:6px;border-radius:3px;background:var(--red);vertical-align:middle;margin-left:6px;opacity:.75;}
+
+footer{max-width:1400px;margin:0 auto;padding:10px 32px 40px;font-size:11px;color:var(--gray-dark);line-height:1.6;}
+
+@media(max-width:900px){
+  .header-inner{grid-template-columns:1fr;row-gap:8px;padding:10px 16px;height:auto;}
+  .brand,.year-toggle,.header-right{justify-self:center;text-align:center;}
+  header,nav{top:0;position:relative;}
+  .filter-inner,.nav-inner,main,footer{padding-left:16px;padding-right:16px;}
+  main{padding-top:20px;}
+  .chart-card{padding:16px 12px;}
+  .section-title{font-size:22px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .kpi-value{font-size:20px;}
+  .f-select{max-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo"><span>L</span></div>
+      <div><div class="brand-name">LINDENBERG</div><div class="brand-sub">Novos Leads x Retorno</div></div>
+    </div>
+    <div class="year-toggle" id="yearToggle"></div>
+    <div class="header-right" id="headerRight"></div>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <div class="filter-inner">
+    <div class="f-group"><span class="f-label">Produto</span><select class="f-select" id="fProd"></select></div>
+    <div class="f-group"><span class="f-label">Mídia</span><select class="f-select" id="fMidia"></select></div>
+    <div class="f-group"><span class="f-label">Exibir</span>
+      <div class="seg" id="segMetric"><button data-v="pct" class="active">% Taxa de retorno</button><button data-v="abs">Retornos (bruto)</button></div>
+    </div>
+    <button class="f-clear" id="fClear">limpar filtros</button>
+  </div>
+</div>
+
+<nav><div class="nav-inner">
+  <button class="nav-btn active" data-s="geral">Visão Geral</button>
+  <button class="nav-btn" data-s="produto">Por Produto</button>
+  <button class="nav-btn" data-s="dup">Qualidade dos dados</button>
+</div></nav>
+
+<main>
+<!-- ═══ VISÃO GERAL ═══ -->
+<section class="section active" id="s-geral">
+  <div class="section-header">
+    <div class="section-title">Visão Geral <span class="tag" id="tagGeral"></span></div>
+    <div class="section-note">Taxa de retorno = Retornos ÷ Novos Leads do mesmo mês. Ex.: 2.000 novos leads e 200 retornos → 10%.</div>
+  </div>
+  <div class="hl" id="hlGeral"></div>
+  <div class="kpi-grid" id="kpiGeral"></div>
+
+  <div class="chart-card">
+    <div class="chart-title" id="t_evo">Evolução mensal — comparativo entre anos</div>
+    <div class="chart-subtitle" id="st_evo"></div>
+    <div class="chart-wrap-lg"><canvas id="c_evo"></canvas></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title" id="t_acum">Acumulado no ano</div>
+    <div class="chart-subtitle" id="st_acum"></div>
+    <div class="chart-wrap"><canvas id="c_acum"></canvas></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Novos Leads x Retornos — linha do tempo</div>
+    <div class="chart-subtitle">Barras = volume mensal (eixo esquerdo) | Linha = taxa de retorno (eixo direito)</div>
+    <div class="chart-wrap"><canvas id="c_timeline"></canvas></div>
+  </div>
+
+  <div class="table-block">
+    <div class="table-title-row"><div class="table-section-title">Mês a mês</div><div class="table-hint">Novos leads, retornos e taxa por ano</div></div>
+    <div class="table-scroll"><table class="summary-table" id="tblMes"></table></div>
+  </div>
+</section>
+
+<!-- ═══ POR PRODUTO ═══ -->
+<section class="section" id="s-produto">
+  <div class="section-header">
+    <div class="section-title">Por Produto <span class="tag" id="tagProd"></span></div>
+    <div class="section-note">Clique numa linha da tabela para filtrar o relatório inteiro por aquele produto.</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title" id="t_prod"></div>
+    <div class="chart-subtitle">Produtos com pelo menos 30 novos leads no período · ordenado do maior para o menor · Institucional e "sem produto" só aparecem na tabela (recebem retornos de vários produtos e distorcem a escala)</div>
+    <div id="prodWrap" style="position:relative"><canvas id="c_prod"></canvas></div>
+  </div>
+
+  <div class="table-block">
+    <div class="table-title-row"><div class="table-section-title">Retorno por produto e ano</div><div class="table-hint" id="hintProdTbl"></div></div>
+    <div class="table-scroll"><table class="summary-table" id="tblProd"></table></div>
+  </div>
+
+  <div class="table-block">
+    <div class="table-title-row"><div class="table-section-title" id="t_heat">Mapa mensal por produto</div><div class="table-hint" id="hintHeat"></div></div>
+    <div class="table-scroll"><table class="summary-table heat" id="tblHeat"></table></div>
+  </div>
+</section>
+
+<!-- ═══ DUPLICATAS ═══ -->
+<section class="section" id="s-dup">
+  <div class="section-header">
+    <div class="section-title">Qualidade dos dados <span class="tag">Duplicatas suspeitas</span></div>
+    <div class="section-note">Análise complementar: retornos que entraram minutos depois do próprio Novo Lead por falha de integração. Os números principais do relatório seguem o Sigavi.</div>
+  </div>
+  <div class="callout" id="dupCallout"></div>
+  <div class="kpi-grid" id="kpiDup"></div>
+
+  <div class="chart-card">
+    <div class="chart-title">Retornos reais x duplicatas suspeitas</div>
+    <div class="chart-subtitle">Barras empilhadas por mês · respeita os filtros de produto e mídia</div>
+    <div class="chart-wrap"><canvas id="c_dupStack"></canvas></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Taxa de retorno: com x sem duplicatas</div>
+      <div class="chart-subtitle">Quanto a taxa cai se as duplicatas forem removidas</div>
+      <div class="chart-wrap-sm"><canvas id="c_dupTaxa"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tempo entre o Novo Lead e o "Retorno"</div>
+      <div class="chart-subtitle" id="st_hist"></div>
+      <div class="chart-wrap-sm"><canvas id="c_dupHist"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-block">
+    <div class="table-title-row"><div class="table-section-title">Duplicatas por mês</div><div class="table-hint">Faixas de tempo e origem não respondem aos filtros de produto/mídia</div></div>
+    <div class="table-scroll"><table class="summary-table" id="tblDup"></table></div>
+  </div>
+
+  <div class="table-block">
+    <div class="table-title-row"><div class="table-section-title">De onde vêm as duplicatas</div><div class="table-hint">Mídia da 1ª entrada → mídia do "Retorno"</div></div>
+    <div class="table-scroll"><table class="summary-table" id="tblSig"></table></div>
+  </div>
+</section>
+</main>
+
+<footer id="foot"></footer>
+
+<script>
+const DATA = {"anos": [2024, 2025, 2026], "produtos": ["PRAÇA LINDENBERG CLODOMIRO", "PRAÇA LINDENBERG MACURAPÉ", "LINDENBERG RESERVA PARAÍSO RESIDENCIAL", "LINDENBERG ALTO DAS NAÇÕES", "LINDENBERG GUARARÁ", "LINDENBERG GROENLÂNDIA 77", "LINDENBERG MOEMA", "JOTA VILA MARIANA RESIDENCIAL", "LINDENBERG ALTO DE PINHEIROS", "EDIFÍCIO ADOLPHO LINDENBERG", "(sem produto)", "LINDENBERG VISTA BROOKLIN", "VISTA ALTO DE PINHEIROS", "LINDENBERG IBIRAPUERA", "BROOKLIN STUDIOS BY LINDENBERG", "STUDIOS PARAÍSO BY LINDENBERG", "JOTA VILA MARIANA STUDIOS", "METROPOLITAN BY LINDENBERG", "INSTITUCIONAL", "LINDENBERG CAMBUÍ", "LINDENBERG VILA MARIANA", "CAMPANHA DUARTE JOTA", "LINDENBERG RESERVA ITAIM", "CAMPANHA DUARTE IBIRAPUERA", "LINDENBERG PRAÇA", "LINDENBERG PARK LANE"], "midias": ["Site", "Facebook", "Instagram", "Lais - IA", "Site/WhatsApp", "LP - Vista Alto de Pinheiros", "Fale Conosco", "LP - Moema", "LP- Praça Lindenberg", "LP- Guarará", "Oferta Ativa", "LP- Groelandia", "Placa", "QR CODE", "Telefone"], "rows": [[2024, 1, 10, 0, 55, 20, 16], [2024, 1, 18, 0, 0, 1, 0], [2024, 1, 7, 0, 117, 21, 13], [2024, 1, 16, 0, 51, 14, 9], [2024, 1, 8, 0, 59, 19, 5], [2024, 1, 19, 0, 4, 0, 0], [2024, 1, 5, 0, 80, 25, 16], [2024, 1, 4, 0, 25, 18, 12], [2024, 1, 13, 0, 29, 12, 7], [2024, 1, 22, 0, 0, 1, 0], [2024, 1, 20, 0, 58, 23, 10], [2024, 1, 11, 0, 0, 1, 0], [2024, 1, 0, 6, 3, 2, 1], [2024, 1, 0, 0, 330, 105, 42], [2024, 1, 1, 1, 155, 54, 1], [2024, 1, 1, 0, 169, 53, 11], [2024, 2, 10, 0, 36, 21, 13], [2024, 2, 18, 0, 3, 6, 2], [2024, 2, 7, 0, 75, 35, 29], [2024, 2, 16, 0, 57, 18, 16], [2024, 2, 8, 0, 40, 30, 17], [2024, 2, 19, 0, 3, 2, 2], [2024, 2, 5, 0, 111, 98, 60], [2024, 2, 4, 0, 76, 54, 43], [2024, 2, 13, 0, 45, 6, 1], [2024, 2, 24, 0, 1, 1, 0], [2024, 2, 22, 0, 1, 0, 0], [2024, 2, 20, 0, 54, 33, 26], [2024, 2, 11, 0, 89, 17, 6], [2024, 2, 0, 8, 2, 1, 0], [2024, 2, 0, 0, 800, 498, 321], [2024, 2, 1, 1, 124, 25, 1], [2024, 2, 1, 0, 155, 47, 9], [2024, 3, 10, 0, 18, 11, 6], [2024, 3, 18, 0, 5, 3, 2], [2024, 3, 7, 0, 65, 11, 5], [2024, 3, 16, 0, 43, 8, 8], [2024, 3, 8, 0, 51, 18, 3], [2024, 3, 19, 0, 2, 0, 0], [2024, 3, 5, 0, 87, 53, 26], [2024, 3, 4, 0, 44, 10, 3], [2024, 3, 13, 0, 66, 4, 1], [2024, 3, 22, 0, 1, 1, 0], [2024, 3, 20, 0, 8, 21, 12], [2024, 3, 11, 0, 101, 11, 0], [2024, 3, 0, 0, 767, 197, 88], [2024, 3, 1, 1, 265, 27, 0], [2024, 3, 1, 0, 282, 46, 4], [2024, 4, 10, 0, 66, 19, 18], [2024, 4, 18, 0, 8, 3, 2], [2024, 4, 7, 0, 101, 24, 15], [2024, 4, 16, 0, 43, 13, 10], [2024, 4, 8, 0, 76, 35, 21], [2024, 4, 19, 0, 5, 14, 10], [2024, 4, 5, 0, 83, 26, 17], [2024, 4, 4, 0, 40, 5, 2], [2024, 4, 13, 0, 71, 7, 0], [2024, 4, 24, 0, 1, 0, 0], [2024, 4, 22, 0, 5, 1, 0], [2024, 4, 20, 0, 6, 7, 2], [2024, 4, 11, 0, 130, 12, 2], [2024, 4, 0, 1, 0, 1, 0], [2024, 4, 0, 0, 636, 193, 95], [2024, 4, 1, 1, 144, 11, 1], [2024, 4, 1, 0, 132, 31, 7], [2024, 5, 10, 0, 65, 50, 36], [2024, 5, 14, 0, 94, 5, 0], [2024, 5, 18, 0, 16, 8, 6], [2024, 5, 7, 6, 0, 1, 0], [2024, 5, 7, 0, 62, 6, 1], [2024, 5, 16, 0, 16, 1, 0], [2024, 5, 8, 0, 84, 25, 9], [2024, 5, 19, 0, 5, 3, 2], [2024, 5, 5, 0, 138, 29, 14], [2024, 5, 4, 0, 13, 6, 4], [2024, 5, 13, 0, 100, 13, 2], [2024, 5, 22, 0, 3, 2, 0], [2024, 5, 20, 0, 11, 10, 9], [2024, 5, 11, 0, 78, 12, 1], [2024, 5, 0, 1, 4, 0, 0], [2024, 5, 0, 8, 14, 0, 0], [2024, 5, 0, 0, 403, 60, 33], [2024, 5, 1, 1, 147, 15, 1], [2024, 5, 1, 0, 149, 39, 7], [2024, 6, 10, 0, 83, 44, 20], [2024, 6, 14, 0, 86, 8, 2], [2024, 6, 18, 0, 23, 9, 3], [2024, 6, 7, 0, 126, 9, 5], [2024, 6, 16, 0, 33, 2, 1], [2024, 6, 8, 0, 67, 18, 5], [2024, 6, 19, 0, 1, 1, 1], [2024, 6, 5, 11, 0, 1, 0], [2024, 6, 5, 0, 172, 32, 17], [2024, 6, 4, 0, 43, 15, 8], [2024, 6, 13, 0, 144, 29, 7], [2024, 6, 22, 0, 3, 2, 0], [2024, 6, 20, 0, 7, 3, 2], [2024, 6, 11, 0, 85, 19, 4], [2024, 6, 0, 1, 0, 1, 0], [2024, 6, 0, 6, 9, 4, 2], [2024, 6, 0, 8, 10, 1, 0], [2024, 6, 0, 0, 407, 85, 29], [2024, 6, 1, 1, 145, 37, 0], [2024, 6, 1, 0, 163, 36, 11], [2024, 7, 10, 6, 1, 0, 0], [2024, 7, 10, 0, 29, 47, 23], [2024, 7, 10, 4, 55, 52, 19], [2024, 7, 14, 0, 119, 6, 0], [2024, 7, 18, 11, 7, 0, 0], [2024, 7, 18, 9, 1, 0, 0], [2024, 7, 18, 8, 16, 1, 1], [2024, 7, 18, 0, 5, 0, 0], [2024, 7, 18, 4, 7, 9, 5], [2024, 7, 7, 6, 22, 4, 0], [2024, 7, 7, 0, 105, 17, 1], [2024, 7, 16, 0, 37, 1, 0], [2024, 7, 3, 0, 52, 18, 1], [2024, 7, 8, 0, 106, 15, 4], [2024, 7, 19, 0, 1, 0, 0], [2024, 7, 5, 6, 2, 16, 11], [2024, 7, 5, 11, 0, 1, 0], [2024, 7, 5, 0, 215, 55, 27], [2024, 7, 5, 4, 0, 7, 1], [2024, 7, 4, 9, 9, 7, 2], [2024, 7, 4, 0, 44, 7, 3], [2024, 7, 4, 4, 0, 2, 0], [2024, 7, 13, 0, 74, 19, 1], [2024, 7, 22, 0, 2, 0, 0], [2024, 7, 20, 6, 1, 1, 0], [2024, 7, 20, 0, 6, 2, 1], [2024, 7, 20, 4, 0, 1, 0], [2024, 7, 11, 0, 68, 16, 3], [2024, 7, 11, 4, 1, 0, 0], [2024, 7, 0, 1, 2, 0, 0], [2024, 7, 0, 6, 8, 2, 0], [2024, 7, 0, 8, 14, 7, 1], [2024, 7, 0, 0, 511, 111, 25], [2024, 7, 0, 4, 1, 1, 0], [2024, 7, 1, 1, 375, 325, 7], [2024, 7, 1, 0, 11, 11, 0], [2024, 8, 10, 0, 88, 17, 8], [2024, 8, 10, 4, 59, 41, 24], [2024, 8, 14, 0, 183, 12, 3], [2024, 8, 18, 11, 7, 1, 1], [2024, 8, 18, 9, 4, 0, 0], [2024, 8, 18, 8, 12, 4, 3], [2024, 8, 18, 0, 14, 3, 0], [2024, 8, 18, 4, 12, 1, 0], [2024, 8, 7, 6, 21, 18, 1], [2024, 8, 7, 0, 91, 12, 3], [2024, 8, 16, 0, 21, 1, 0], [2024, 8, 3, 0, 1486, 164, 31], [2024, 8, 8, 6, 4, 5, 2], [2024, 8, 8, 0, 78, 14, 3], [2024, 8, 8, 4, 0, 1, 0], [2024, 8, 19, 6, 3, 4, 1], [2024, 8, 19, 12, 1, 0, 0], [2024, 8, 19, 0, 1, 0, 0], [2024, 8, 19, 4, 0, 1, 0], [2024, 8, 5, 6, 4, 16, 8], [2024, 8, 5, 0, 216, 42, 23], [2024, 8, 5, 4, 0, 4, 4], [2024, 8, 4, 6, 2, 5, 4], [2024, 8, 4, 9, 5, 3, 1], [2024, 8, 4, 0, 78, 18, 13], [2024, 8, 4, 4, 0, 2, 2], [2024, 8, 13, 0, 103, 20, 2], [2024, 8, 22, 0, 1, 2, 0], [2024, 8, 20, 6, 5, 9, 3], [2024, 8, 20, 0, 4, 1, 1], [2024, 8, 20, 4, 1, 1, 0], [2024, 8, 11, 0, 74, 11, 2], [2024, 8, 11, 4, 1, 1, 1], [2024, 8, 0, 1, 1, 3, 0], [2024, 8, 0, 6, 14, 8, 2], [2024, 8, 0, 8, 15, 8, 2], [2024, 8, 0, 0, 348, 43, 18], [2024, 8, 0, 4, 0, 1, 1], [2024, 8, 1, 1, 666, 134, 4], [2024, 8, 1, 0, 10, 21, 0], [2024, 9, 10, 0, 39, 13, 8], [2024, 9, 10, 4, 45, 31, 25], [2024, 9, 14, 0, 158, 15, 10], [2024, 9, 18, 1, 32, 8, 4], [2024, 9, 18, 11, 5, 3, 1], [2024, 9, 18, 9, 2, 1, 1], [2024, 9, 18, 8, 3, 2, 0], [2024, 9, 18, 0, 6, 4, 3], [2024, 9, 18, 4, 9, 5, 0], [2024, 9, 7, 6, 38, 5, 0], [2024, 9, 7, 0, 30, 4, 1], [2024, 9, 7, 4, 1, 0, 0], [2024, 9, 16, 0, 17, 2, 0], [2024, 9, 3, 0, 1314, 144, 47], [2024, 9, 8, 6, 1, 0, 0], [2024, 9, 8, 0, 67, 17, 7], [2024, 9, 8, 4, 2, 1, 0], [2024, 9, 19, 1, 47, 3, 0], [2024, 9, 19, 6, 2, 1, 0], [2024, 9, 19, 0, 3, 3, 2], [2024, 9, 19, 4, 2, 3, 2], [2024, 9, 5, 0, 102, 21, 16], [2024, 9, 5, 4, 1, 2, 2], [2024, 9, 4, 9, 7, 3, 3], [2024, 9, 4, 0, 108, 21, 18], [2024, 9, 4, 4, 0, 3, 3], [2024, 9, 13, 0, 98, 5, 4], [2024, 9, 22, 0, 2, 0, 0], [2024, 9, 2, 0, 10, 0, 0], [2024, 9, 20, 6, 4, 3, 2], [2024, 9, 20, 0, 3, 4, 4], [2024, 9, 20, 4, 2, 3, 1], [2024, 9, 11, 0, 60, 17, 5], [2024, 9, 11, 4, 2, 1, 0], [2024, 9, 0, 1, 111, 19, 3], [2024, 9, 0, 6, 8, 5, 1], [2024, 9, 0, 8, 16, 2, 2], [2024, 9, 0, 0, 104, 10, 4], [2024, 9, 1, 1, 973, 193, 34], [2024, 9, 1, 0, 9, 28, 1], [2024, 9, 1, 4, 0, 2, 2], [2024, 10, 10, 0, 24, 31, 19], [2024, 10, 10, 4, 25, 18, 13], [2024, 10, 14, 0, 125, 4, 2], [2024, 10, 18, 1, 89, 13, 8], [2024, 10, 18, 0, 3, 3, 1], [2024, 10, 18, 4, 4, 4, 3], [2024, 10, 7, 6, 1, 1, 0], [2024, 10, 7, 0, 14, 5, 2], [2024, 10, 7, 4, 3, 2, 1], [2024, 10, 16, 0, 41, 8, 3], [2024, 10, 16, 4, 0, 3, 2], [2024, 10, 3, 0, 614, 93, 49], [2024, 10, 8, 6, 1, 0, 0], [2024, 10, 8, 0, 40, 23, 14], [2024, 10, 8, 4, 5, 4, 2], [2024, 10, 19, 1, 72, 9, 3], [2024, 10, 19, 6, 1, 0, 0], [2024, 10, 19, 0, 5, 5, 5], [2024, 10, 19, 4, 2, 3, 2], [2024, 10, 5, 6, 4, 2, 1], [2024, 10, 5, 0, 157, 47, 22], [2024, 10, 4, 1, 1, 0, 0], [2024, 10, 4, 6, 2, 2, 2], [2024, 10, 4, 9, 3, 1, 1], [2024, 10, 4, 0, 58, 19, 12], [2024, 10, 4, 4, 0, 2, 1], [2024, 10, 13, 0, 104, 12, 5], [2024, 10, 13, 4, 1, 0, 0], [2024, 10, 22, 0, 1, 0, 0], [2024, 10, 2, 1, 2, 0, 0], [2024, 10, 2, 0, 129, 35, 9], [2024, 10, 2, 4, 13, 8, 0], [2024, 10, 20, 6, 3, 2, 0], [2024, 10, 20, 0, 2, 2, 2], [2024, 10, 20, 4, 1, 0, 0], [2024, 10, 11, 0, 40, 10, 0], [2024, 10, 0, 1, 343, 54, 25], [2024, 10, 0, 6, 17, 6, 4], [2024, 10, 0, 8, 8, 0, 0], [2024, 10, 0, 0, 46, 3, 3], [2024, 10, 0, 4, 1, 0, 0], [2024, 10, 1, 1, 1204, 256, 83], [2024, 10, 1, 0, 26, 19, 3], [2024, 10, 1, 4, 1, 3, 2], [2024, 11, 10, 1, 0, 10, 6], [2024, 11, 10, 6, 1, 4, 3], [2024, 11, 10, 8, 1, 0, 0], [2024, 11, 10, 0, 34, 21, 12], [2024, 11, 10, 4, 17, 34, 31], [2024, 11, 14, 0, 123, 2, 0], [2024, 11, 18, 1, 8, 0, 0], [2024, 11, 18, 0, 4, 4, 0], [2024, 11, 7, 6, 1, 2, 0], [2024, 11, 7, 0, 26, 5, 0], [2024, 11, 7, 4, 3, 3, 1], [2024, 11, 16, 0, 29, 1, 0], [2024, 11, 3, 0, 262, 24, 1], [2024, 11, 8, 0, 34, 7, 1], [2024, 11, 8, 4, 1, 3, 2], [2024, 11, 19, 1, 63, 4, 0], [2024, 11, 19, 0, 19, 1, 1], [2024, 11, 19, 4, 3, 3, 3], [2024, 11, 5, 1, 2, 4, 0], [2024, 11, 5, 6, 4, 3, 3], [2024, 11, 5, 0, 200, 24, 4], [2024, 11, 5, 4, 0, 5, 4], [2024, 11, 4, 6, 0, 2, 1], [2024, 11, 4, 9, 4, 1, 0], [2024, 11, 4, 0, 73, 10, 1], [2024, 11, 4, 4, 0, 4, 2], [2024, 11, 13, 0, 94, 9, 3], [2024, 11, 13, 4, 0, 1, 1], [2024, 11, 22, 0, 2, 1, 0], [2024, 11, 2, 0, 694, 109, 34], [2024, 11, 20, 6, 4, 2, 1], [2024, 11, 20, 0, 5, 2, 0], [2024, 11, 11, 0, 16, 0, 0], [2024, 11, 0, 1, 79, 5, 0], [2024, 11, 0, 6, 5, 4, 1], [2024, 11, 0, 8, 7, 0, 0], [2024, 11, 0, 0, 73, 2, 1], [2024, 11, 0, 4, 0, 4, 4], [2024, 11, 1, 1, 863, 133, 10], [2024, 11, 1, 0, 12, 13, 1], [2024, 11, 1, 4, 0, 3, 3], [2024, 12, 10, 8, 1, 1, 0], [2024, 12, 10, 0, 25, 11, 7], [2024, 12, 10, 4, 21, 29, 27], [2024, 12, 14, 0, 48, 4, 0], [2024, 12, 14, 4, 2, 1, 0], [2024, 12, 18, 0, 5, 2, 0], [2024, 12, 7, 6, 1, 8, 0], [2024, 12, 7, 0, 31, 7, 0], [2024, 12, 7, 4, 4, 0, 0], [2024, 12, 16, 0, 33, 10, 1], [2024, 12, 3, 0, 87, 8, 1], [2024, 12, 3, 4, 2, 2, 1], [2024, 12, 8, 6, 1, 1, 1], [2024, 12, 8, 0, 34, 12, 1], [2024, 12, 8, 4, 3, 3, 0], [2024, 12, 19, 1, 13, 6, 1], [2024, 12, 19, 0, 12, 1, 0], [2024, 12, 19, 4, 0, 4, 4], [2024, 12, 5, 0, 148, 17, 4], [2024, 12, 5, 4, 0, 4, 2], [2024, 12, 4, 6, 2, 7, 6], [2024, 12, 4, 9, 2, 2, 0], [2024, 12, 4, 0, 34, 10, 1], [2024, 12, 13, 0, 37, 4, 1], [2024, 12, 13, 4, 1, 0, 0], [2024, 12, 2, 0, 441, 52, 16], [2024, 12, 20, 6, 2, 0, 0], [2024, 12, 20, 0, 6, 2, 1], [2024, 12, 11, 0, 2, 0, 0], [2024, 12, 0, 6, 3, 4, 1], [2024, 12, 0, 8, 4, 4, 1], [2024, 12, 0, 0, 63, 2, 1], [2024, 12, 1, 1, 434, 95, 15], [2024, 12, 1, 0, 8, 6, 0], [2025, 1, 10, 0, 38, 24, 11], [2025, 1, 10, 4, 17, 22, 21], [2025, 1, 14, 0, 107, 4, 0], [2025, 1, 18, 0, 0, 7, 0], [2025, 1, 7, 6, 1, 5, 0], [2025, 1, 7, 0, 40, 13, 0], [2025, 1, 7, 4, 1, 2, 1], [2025, 1, 16, 0, 39, 11, 2], [2025, 1, 3, 0, 193, 12, 0], [2025, 1, 3, 4, 1, 0, 0], [2025, 1, 8, 6, 1, 0, 0], [2025, 1, 8, 0, 61, 20, 10], [2025, 1, 8, 4, 13, 7, 5], [2025, 1, 19, 1, 28, 9, 4], [2025, 1, 19, 0, 13, 1, 1], [2025, 1, 19, 4, 2, 0, 0], [2025, 1, 5, 0, 118, 14, 3], [2025, 1, 5, 4, 0, 1, 0], [2025, 1, 4, 9, 1, 2, 0], [2025, 1, 4, 0, 44, 15, 2], [2025, 1, 4, 4, 0, 1, 0], [2025, 1, 13, 0, 60, 8, 0], [2025, 1, 22, 0, 1, 0, 0], [2025, 1, 2, 0, 438, 71, 13], [2025, 1, 20, 6, 2, 0, 0], [2025, 1, 20, 0, 12, 2, 1], [2025, 1, 20, 4, 1, 5, 3], [2025, 1, 11, 0, 1, 0, 0], [2025, 1, 0, 6, 6, 14, 9], [2025, 1, 0, 8, 7, 0, 0], [2025, 1, 0, 0, 94, 7, 1], [2025, 1, 1, 1, 320, 90, 15], [2025, 1, 1, 0, 11, 10, 4], [2025, 1, 1, 4, 0, 1, 0], [2025, 2, 10, 6, 2, 1, 1], [2025, 2, 10, 0, 11, 11, 3], [2025, 2, 10, 4, 9, 16, 16], [2025, 2, 14, 0, 82, 2, 0], [2025, 2, 14, 4, 1, 2, 0], [2025, 2, 18, 0, 1, 0, 0], [2025, 2, 7, 6, 1, 0, 0], [2025, 2, 7, 0, 27, 7, 0], [2025, 2, 7, 4, 5, 2, 0], [2025, 2, 16, 0, 42, 9, 1], [2025, 2, 3, 0, 190, 16, 0], [2025, 2, 8, 0, 39, 3, 1], [2025, 2, 8, 4, 10, 4, 2], [2025, 2, 19, 1, 32, 3, 1], [2025, 2, 19, 6, 1, 0, 0], [2025, 2, 19, 0, 16, 1, 1], [2025, 2, 19, 4, 0, 7, 7], [2025, 2, 5, 1, 0, 1, 0], [2025, 2, 5, 0, 80, 18, 7], [2025, 2, 5, 4, 0, 3, 3], [2025, 2, 4, 6, 1, 1, 1], [2025, 2, 4, 9, 3, 2, 0], [2025, 2, 4, 0, 69, 14, 1], [2025, 2, 13, 0, 69, 10, 0], [2025, 2, 22, 0, 1, 0, 0], [2025, 2, 2, 0, 454, 82, 17], [2025, 2, 2, 4, 0, 1, 1], [2025, 2, 20, 6, 5, 1, 1], [2025, 2, 20, 0, 2, 2, 1], [2025, 2, 20, 4, 0, 1, 1], [2025, 2, 11, 4, 1, 1, 0], [2025, 2, 0, 6, 3, 6, 4], [2025, 2, 0, 8, 2, 0, 0], [2025, 2, 0, 0, 32, 0, 0], [2025, 2, 0, 4, 0, 1, 1], [2025, 2, 1, 1, 135, 47, 2], [2025, 2, 1, 0, 6, 9, 0], [2025, 3, 10, 6, 1, 0, 0], [2025, 3, 10, 0, 31, 13, 3], [2025, 3, 10, 4, 10, 19, 18], [2025, 3, 14, 0, 55, 8, 3], [2025, 3, 14, 4, 2, 0, 0], [2025, 3, 18, 0, 1, 6, 1], [2025, 3, 7, 0, 55, 12, 1], [2025, 3, 16, 0, 50, 13, 9], [2025, 3, 3, 0, 174, 29, 1], [2025, 3, 3, 4, 0, 1, 0], [2025, 3, 8, 0, 48, 9, 1], [2025, 3, 19, 1, 46, 6, 2], [2025, 3, 19, 0, 17, 0, 0], [2025, 3, 19, 4, 0, 2, 2], [2025, 3, 5, 1, 0, 1, 0], [2025, 3, 5, 0, 76, 10, 0], [2025, 3, 5, 4, 0, 2, 2], [2025, 3, 4, 1, 1, 0, 0], [2025, 3, 4, 9, 3, 1, 0], [2025, 3, 4, 0, 75, 14, 2], [2025, 3, 4, 4, 0, 2, 2], [2025, 3, 13, 0, 66, 17, 2], [2025, 3, 22, 1, 10, 16, 0], [2025, 3, 2, 0, 459, 65, 12], [2025, 3, 20, 6, 3, 3, 2], [2025, 3, 20, 0, 5, 2, 1], [2025, 3, 20, 4, 0, 4, 4], [2025, 3, 11, 0, 2, 0, 0], [2025, 3, 11, 4, 1, 0, 0], [2025, 3, 0, 6, 7, 7, 2], [2025, 3, 0, 8, 3, 0, 0], [2025, 3, 0, 0, 17, 4, 0], [2025, 3, 1, 1, 311, 89, 16], [2025, 3, 1, 0, 1, 7, 1], [2025, 4, 10, 6, 1, 0, 0], [2025, 4, 10, 0, 27, 5, 1], [2025, 4, 10, 4, 14, 8, 7], [2025, 4, 14, 0, 50, 0, 0], [2025, 4, 18, 0, 1, 4, 0], [2025, 4, 7, 0, 60, 9, 0], [2025, 4, 16, 0, 58, 20, 4], [2025, 4, 3, 0, 138, 12, 1], [2025, 4, 8, 0, 43, 8, 1], [2025, 4, 19, 1, 23, 4, 1], [2025, 4, 19, 0, 15, 0, 0], [2025, 4, 19, 4, 0, 7, 7], [2025, 4, 5, 0, 92, 17, 3], [2025, 4, 4, 1, 0, 1, 0], [2025, 4, 4, 6, 0, 1, 0], [2025, 4, 4, 9, 3, 0, 0], [2025, 4, 4, 0, 70, 17, 1], [2025, 4, 4, 4, 1, 1, 1], [2025, 4, 13, 0, 64, 7, 0], [2025, 4, 13, 4, 0, 1, 1], [2025, 4, 22, 1, 11, 8, 0], [2025, 4, 22, 0, 3, 0, 0], [2025, 4, 2, 0, 440, 63, 11], [2025, 4, 20, 6, 2, 1, 0], [2025, 4, 20, 0, 4, 3, 1], [2025, 4, 20, 4, 1, 1, 1], [2025, 4, 11, 0, 43, 12, 0], [2025, 4, 0, 6, 9, 4, 0], [2025, 4, 0, 8, 1, 0, 0], [2025, 4, 0, 0, 33, 2, 0], [2025, 4, 1, 1, 148, 62, 5], [2025, 4, 1, 4, 0, 1, 0], [2025, 5, 10, 6, 1, 0, 0], [2025, 5, 10, 0, 22, 8, 1], [2025, 5, 10, 4, 12, 11, 10], [2025, 5, 14, 0, 53, 3, 0], [2025, 5, 18, 0, 3, 4, 0], [2025, 5, 7, 0, 62, 8, 1], [2025, 5, 16, 0, 48, 6, 0], [2025, 5, 3, 0, 88, 12, 0], [2025, 5, 3, 4, 1, 0, 0], [2025, 5, 8, 0, 106, 11, 4], [2025, 5, 8, 4, 0, 10, 9], [2025, 5, 19, 6, 1, 2, 2], [2025, 5, 19, 0, 4, 2, 1], [2025, 5, 5, 0, 71, 12, 4], [2025, 5, 4, 9, 2, 1, 0], [2025, 5, 4, 0, 49, 12, 1], [2025, 5, 13, 0, 55, 5, 0], [2025, 5, 22, 1, 5, 13, 0], [2025, 5, 22, 0, 1, 0, 0], [2025, 5, 2, 0, 465, 77, 6], [2025, 5, 20, 6, 4, 1, 0], [2025, 5, 20, 0, 1, 0, 0], [2025, 5, 20, 4, 0, 1, 1], [2025, 5, 11, 0, 59, 5, 1], [2025, 5, 0, 6, 9, 5, 0], [2025, 5, 0, 8, 2, 0, 0], [2025, 5, 0, 0, 44, 2, 0], [2025, 5, 0, 4, 0, 2, 2], [2025, 5, 1, 1, 152, 40, 5], [2025, 5, 15, 0, 79, 36, 15], [2025, 6, 10, 6, 1, 0, 0], [2025, 6, 10, 0, 42, 45, 30], [2025, 6, 10, 4, 4, 3, 3], [2025, 6, 14, 0, 58, 3, 0], [2025, 6, 18, 0, 4, 2, 0], [2025, 6, 7, 0, 73, 11, 2], [2025, 6, 16, 0, 37, 10, 2], [2025, 6, 3, 0, 66, 16, 2], [2025, 6, 3, 4, 2, 0, 0], [2025, 6, 8, 0, 144, 37, 25], [2025, 6, 8, 4, 0, 3, 3], [2025, 6, 5, 0, 70, 19, 4], [2025, 6, 4, 1, 0, 2, 0], [2025, 6, 4, 9, 5, 1, 0], [2025, 6, 4, 13, 1, 0, 0], [2025, 6, 4, 0, 49, 8, 3], [2025, 6, 13, 0, 55, 4, 0], [2025, 6, 22, 1, 11, 3, 0], [2025, 6, 22, 0, 2, 1, 1], [2025, 6, 2, 0, 354, 49, 7], [2025, 6, 11, 0, 79, 9, 0], [2025, 6, 0, 6, 16, 6, 1], [2025, 6, 0, 0, 30, 1, 0], [2025, 6, 1, 1, 162, 41, 7], [2025, 6, 1, 0, 0, 2, 0], [2025, 6, 15, 0, 154, 34, 18], [2025, 7, 10, 6, 1, 2, 2], [2025, 7, 10, 0, 39, 20, 15], [2025, 7, 14, 0, 1, 1, 0], [2025, 7, 18, 0, 1, 2, 1], [2025, 7, 7, 6, 0, 3, 0], [2025, 7, 7, 0, 24, 5, 0], [2025, 7, 16, 0, 51, 13, 0], [2025, 7, 3, 0, 48, 5, 1], [2025, 7, 8, 0, 105, 40, 17], [2025, 7, 19, 0, 2, 2, 1], [2025, 7, 5, 0, 49, 10, 0], [2025, 7, 4, 9, 6, 3, 0], [2025, 7, 4, 0, 51, 31, 6], [2025, 7, 13, 0, 34, 3, 1], [2025, 7, 22, 0, 3, 2, 0], [2025, 7, 2, 0, 272, 45, 3], [2025, 7, 20, 6, 1, 0, 0], [2025, 7, 20, 0, 1, 0, 0], [2025, 7, 11, 0, 192, 13, 4], [2025, 7, 0, 6, 4, 7, 6], [2025, 7, 0, 8, 2, 0, 0], [2025, 7, 0, 0, 29, 4, 0], [2025, 7, 1, 1, 77, 25, 0], [2025, 7, 1, 0, 5, 9, 1], [2025, 7, 15, 0, 185, 32, 21], [2025, 8, 10, 0, 46, 23, 14], [2025, 8, 14, 0, 40, 5, 0], [2025, 8, 18, 0, 2, 10, 0], [2025, 8, 7, 6, 5, 1, 1], [2025, 8, 7, 0, 109, 16, 2], [2025, 8, 16, 0, 61, 9, 1], [2025, 8, 3, 0, 47, 3, 0], [2025, 8, 8, 0, 289, 47, 19], [2025, 8, 5, 1, 154, 10, 0], [2025, 8, 5, 0, 32, 3, 0], [2025, 8, 4, 1, 109, 7, 0], [2025, 8, 4, 9, 3, 5, 1], [2025, 8, 4, 0, 60, 15, 3], [2025, 8, 13, 0, 35, 3, 0], [2025, 8, 25, 0, 0, 2, 1], [2025, 8, 2, 0, 223, 43, 5], [2025, 8, 11, 0, 76, 8, 1], [2025, 8, 0, 6, 5, 0, 0], [2025, 8, 0, 8, 1, 0, 0], [2025, 8, 0, 0, 29, 2, 1], [2025, 8, 1, 1, 172, 47, 5], [2025, 8, 1, 0, 17, 23, 3], [2025, 8, 15, 0, 168, 48, 25], [2025, 8, 12, 1, 44, 11, 2], [2025, 8, 12, 5, 13, 2, 0], [2025, 8, 12, 0, 20, 4, 1], [2025, 9, 10, 1, 2, 0, 0], [2025, 9, 10, 0, 21, 10, 7], [2025, 9, 10, 4, 0, 12, 2], [2025, 9, 14, 0, 40, 3, 0], [2025, 9, 18, 0, 3, 11, 0], [2025, 9, 7, 0, 231, 29, 3], [2025, 9, 16, 0, 43, 5, 0], [2025, 9, 3, 0, 32, 6, 0], [2025, 9, 8, 0, 385, 50, 25], [2025, 9, 19, 6, 1, 0, 0], [2025, 9, 19, 0, 1, 2, 1], [2025, 9, 5, 1, 71, 13, 1], [2025, 9, 5, 0, 31, 0, 0], [2025, 9, 4, 1, 359, 31, 1], [2025, 9, 4, 0, 30, 3, 0], [2025, 9, 13, 0, 19, 4, 0], [2025, 9, 22, 0, 2, 1, 1], [2025, 9, 2, 0, 239, 33, 4], [2025, 9, 20, 0, 4, 1, 1], [2025, 9, 11, 0, 72, 9, 1], [2025, 9, 0, 1, 218, 54, 1], [2025, 9, 0, 6, 5, 5, 1], [2025, 9, 0, 8, 1, 0, 0], [2025, 9, 0, 0, 28, 2, 1], [2025, 9, 1, 1, 8, 2, 0], [2025, 9, 1, 0, 1, 1, 1], [2025, 9, 15, 0, 115, 34, 10], [2025, 9, 12, 1, 313, 30, 1], [2025, 9, 12, 5, 53, 3, 0], [2025, 9, 12, 0, 9, 1, 0], [2025, 10, 10, 1, 2, 0, 0], [2025, 10, 10, 0, 26, 21, 15], [2025, 10, 10, 4, 0, 11, 5], [2025, 10, 14, 0, 19, 0, 0], [2025, 10, 18, 0, 5, 21, 0], [2025, 10, 7, 1, 68, 5, 0], [2025, 10, 7, 0, 134, 22, 4], [2025, 10, 16, 0, 51, 9, 0], [2025, 10, 3, 0, 9, 0, 0], [2025, 10, 8, 0, 221, 27, 10], [2025, 10, 19, 0, 1, 0, 0], [2025, 10, 5, 1, 78, 20, 1], [2025, 10, 5, 0, 16, 3, 0], [2025, 10, 4, 1, 172, 41, 2], [2025, 10, 4, 6, 1, 1, 1], [2025, 10, 4, 9, 1, 0, 0], [2025, 10, 4, 0, 30, 3, 0], [2025, 10, 13, 0, 7, 2, 0], [2025, 10, 6, 1, 11, 1, 0], [2025, 10, 6, 0, 21, 1, 0], [2025, 10, 22, 0, 1, 0, 0], [2025, 10, 2, 0, 167, 22, 2], [2025, 10, 20, 6, 0, 1, 0], [2025, 10, 11, 0, 15, 4, 2], [2025, 10, 0, 1, 519, 78, 2], [2025, 10, 0, 6, 5, 1, 0], [2025, 10, 0, 0, 40, 5, 1], [2025, 10, 15, 0, 90, 15, 4], [2025, 10, 12, 1, 219, 15, 1], [2025, 10, 12, 7, 1, 0, 0], [2025, 10, 12, 5, 79, 4, 0], [2025, 10, 12, 0, 9, 1, 0], [2025, 11, 10, 0, 23, 19, 18], [2025, 11, 10, 4, 0, 6, 0], [2025, 11, 14, 0, 3, 0, 0], [2025, 11, 18, 0, 6, 10, 0], [2025, 11, 7, 1, 28, 8, 0], [2025, 11, 7, 0, 89, 14, 6], [2025, 11, 16, 0, 53, 8, 1], [2025, 11, 8, 0, 186, 33, 13], [2025, 11, 19, 0, 1, 0, 0], [2025, 11, 5, 1, 96, 8, 0], [2025, 11, 5, 0, 15, 1, 0], [2025, 11, 4, 1, 128, 42, 4], [2025, 11, 4, 9, 5, 2, 0], [2025, 11, 4, 0, 71, 6, 2], [2025, 11, 13, 0, 11, 0, 0], [2025, 11, 6, 1, 252, 34, 4], [2025, 11, 6, 7, 31, 3, 0], [2025, 11, 6, 10, 3, 1, 0], [2025, 11, 6, 0, 27, 8, 0], [2025, 11, 2, 0, 91, 12, 1], [2025, 11, 20, 0, 1, 2, 1], [2025, 11, 11, 1, 20, 2, 0], [2025, 11, 11, 0, 2, 0, 0], [2025, 11, 0, 1, 163, 33, 0], [2025, 11, 0, 6, 2, 4, 1], [2025, 11, 0, 8, 1, 0, 0], [2025, 11, 0, 0, 44, 3, 1], [2025, 11, 15, 0, 67, 17, 11], [2025, 11, 12, 1, 95, 14, 1], [2025, 11, 12, 5, 11, 0, 0], [2025, 11, 12, 0, 4, 1, 0], [2025, 12, 10, 1, 1, 0, 0], [2025, 12, 10, 0, 47, 13, 8], [2025, 12, 10, 4, 0, 2, 1], [2025, 12, 14, 0, 4, 0, 0], [2025, 12, 18, 0, 5, 17, 1], [2025, 12, 7, 1, 44, 14, 2], [2025, 12, 7, 0, 30, 6, 0], [2025, 12, 16, 0, 40, 4, 2], [2025, 12, 3, 0, 3, 0, 0], [2025, 12, 8, 0, 172, 28, 12], [2025, 12, 19, 0, 1, 0, 0], [2025, 12, 5, 1, 67, 12, 1], [2025, 12, 5, 0, 4, 2, 0], [2025, 12, 4, 1, 226, 35, 2], [2025, 12, 4, 9, 3, 0, 0], [2025, 12, 4, 0, 54, 2, 0], [2025, 12, 13, 0, 8, 0, 0], [2025, 12, 6, 1, 230, 19, 1], [2025, 12, 6, 7, 24, 4, 0], [2025, 12, 6, 10, 7, 1, 0], [2025, 12, 6, 0, 22, 3, 1], [2025, 12, 2, 0, 112, 16, 0], [2025, 12, 20, 0, 2, 1, 1], [2025, 12, 11, 1, 15, 3, 0], [2025, 12, 0, 1, 170, 39, 1], [2025, 12, 0, 6, 5, 2, 2], [2025, 12, 0, 8, 3, 0, 0], [2025, 12, 0, 0, 42, 1, 0], [2025, 12, 15, 0, 66, 12, 6], [2025, 12, 12, 1, 98, 6, 0], [2025, 12, 12, 5, 76, 2, 0], [2025, 12, 12, 0, 2, 0, 0], [2026, 1, 10, 0, 43, 17, 14], [2026, 1, 10, 4, 0, 1, 0], [2026, 1, 14, 0, 58, 6, 1], [2026, 1, 18, 0, 8, 14, 1], [2026, 1, 7, 1, 67, 6, 0], [2026, 1, 7, 6, 3, 5, 0], [2026, 1, 7, 0, 103, 24, 7], [2026, 1, 16, 0, 22, 1, 0], [2026, 1, 3, 0, 5, 1, 0], [2026, 1, 8, 0, 76, 6, 3], [2026, 1, 19, 0, 2, 0, 0], [2026, 1, 5, 0, 1, 1, 0], [2026, 1, 4, 1, 261, 25, 0], [2026, 1, 4, 9, 2, 0, 0], [2026, 1, 4, 0, 87, 3, 2], [2026, 1, 13, 0, 21, 9, 1], [2026, 1, 6, 1, 277, 27, 4], [2026, 1, 6, 7, 29, 1, 0], [2026, 1, 6, 10, 7, 1, 0], [2026, 1, 6, 0, 23, 3, 0], [2026, 1, 22, 0, 1, 0, 0], [2026, 1, 2, 0, 117, 20, 1], [2026, 1, 20, 0, 3, 2, 2], [2026, 1, 11, 1, 20, 0, 0], [2026, 1, 11, 0, 40, 6, 1], [2026, 1, 17, 0, 301, 84, 31], [2026, 1, 0, 1, 299, 70, 4], [2026, 1, 0, 6, 4, 3, 1], [2026, 1, 0, 8, 2, 0, 0], [2026, 1, 0, 0, 73, 3, 1], [2026, 1, 15, 0, 81, 17, 7], [2026, 1, 12, 1, 86, 6, 0], [2026, 1, 12, 5, 50, 2, 0], [2026, 1, 12, 0, 4, 0, 0], [2026, 2, 10, 0, 23, 6, 3], [2026, 2, 14, 0, 49, 2, 0], [2026, 2, 18, 0, 3, 6, 0], [2026, 2, 7, 1, 51, 10, 1], [2026, 2, 7, 0, 117, 14, 1], [2026, 2, 16, 0, 7, 5, 3], [2026, 2, 3, 0, 2, 0, 0], [2026, 2, 8, 0, 5, 2, 1], [2026, 2, 5, 0, 1, 1, 0], [2026, 2, 4, 1, 195, 17, 2], [2026, 2, 4, 9, 4, 1, 0], [2026, 2, 4, 0, 73, 1, 1], [2026, 2, 13, 0, 65, 19, 3], [2026, 2, 6, 1, 161, 14, 1], [2026, 2, 6, 7, 22, 1, 0], [2026, 2, 6, 10, 2, 1, 0], [2026, 2, 6, 0, 9, 2, 0], [2026, 2, 22, 0, 1, 0, 0], [2026, 2, 2, 0, 65, 16, 3], [2026, 2, 20, 6, 2, 0, 0], [2026, 2, 20, 0, 1, 2, 1], [2026, 2, 11, 1, 14, 0, 0], [2026, 2, 11, 0, 86, 7, 1], [2026, 2, 17, 0, 465, 34, 2], [2026, 2, 0, 1, 374, 52, 2], [2026, 2, 0, 6, 3, 1, 0], [2026, 2, 0, 0, 53, 1, 1], [2026, 2, 15, 0, 38, 10, 6], [2026, 2, 12, 1, 80, 5, 1], [2026, 2, 12, 5, 45, 5, 2], [2026, 2, 12, 0, 1, 0, 0], [2026, 3, 10, 0, 30, 6, 3], [2026, 3, 14, 0, 41, 0, 0], [2026, 3, 9, 0, 1, 0, 0], [2026, 3, 18, 0, 4, 19, 2], [2026, 3, 7, 0, 159, 12, 1], [2026, 3, 16, 0, 11, 2, 0], [2026, 3, 3, 0, 4, 0, 0], [2026, 3, 8, 0, 12, 2, 2], [2026, 3, 5, 0, 2, 1, 0], [2026, 3, 4, 1, 290, 21, 1], [2026, 3, 4, 9, 2, 2, 1], [2026, 3, 4, 0, 38, 1, 0], [2026, 3, 13, 0, 103, 28, 2], [2026, 3, 6, 1, 299, 28, 2], [2026, 3, 6, 7, 25, 1, 0], [2026, 3, 6, 10, 1, 0, 0], [2026, 3, 6, 0, 20, 3, 1], [2026, 3, 22, 0, 3, 0, 0], [2026, 3, 2, 0, 101, 14, 4], [2026, 3, 20, 6, 1, 0, 0], [2026, 3, 20, 0, 0, 3, 2], [2026, 3, 11, 0, 83, 10, 1], [2026, 3, 17, 0, 38, 2, 0], [2026, 3, 0, 1, 610, 39, 1], [2026, 3, 0, 6, 5, 0, 0], [2026, 3, 0, 0, 84, 2, 1], [2026, 3, 15, 0, 44, 2, 0], [2026, 3, 12, 1, 111, 5, 0], [2026, 3, 12, 5, 57, 2, 0], [2026, 3, 12, 0, 3, 0, 0], [2026, 4, 10, 2, 7, 1, 0], [2026, 4, 10, 3, 1, 0, 0], [2026, 4, 10, 0, 43, 12, 7], [2026, 4, 14, 0, 6, 1, 1], [2026, 4, 9, 0, 3, 0, 0], [2026, 4, 18, 0, 3, 13, 1], [2026, 4, 7, 6, 14, 2, 0], [2026, 4, 7, 0, 149, 14, 1], [2026, 4, 16, 0, 24, 4, 1], [2026, 4, 8, 0, 2, 3, 1], [2026, 4, 5, 0, 3, 0, 0], [2026, 4, 4, 1, 300, 19, 0], [2026, 4, 4, 9, 0, 1, 0], [2026, 4, 4, 0, 21, 1, 0], [2026, 4, 13, 0, 89, 20, 2], [2026, 4, 6, 1, 257, 17, 6], [2026, 4, 6, 7, 29, 4, 0], [2026, 4, 6, 10, 2, 0, 0], [2026, 4, 6, 0, 25, 2, 0], [2026, 4, 2, 0, 53, 12, 0], [2026, 4, 11, 0, 94, 14, 1], [2026, 4, 17, 0, 7, 1, 0], [2026, 4, 0, 1, 275, 35, 1], [2026, 4, 0, 6, 10, 4, 1], [2026, 4, 0, 0, 45, 4, 3], [2026, 4, 15, 0, 28, 3, 0], [2026, 4, 12, 1, 141, 5, 1], [2026, 4, 12, 5, 59, 3, 0], [2026, 4, 12, 0, 4, 1, 1], [2026, 5, 10, 2, 171, 39, 8], [2026, 5, 10, 7, 7, 0, 0], [2026, 5, 10, 3, 45, 10, 2], [2026, 5, 10, 0, 32, 9, 5], [2026, 5, 14, 0, 0, 2, 0], [2026, 5, 18, 0, 8, 15, 1], [2026, 5, 7, 3, 4, 0, 0], [2026, 5, 7, 0, 81, 9, 2], [2026, 5, 16, 3, 1, 0, 0], [2026, 5, 16, 0, 12, 2, 1], [2026, 5, 8, 0, 3, 0, 0], [2026, 5, 5, 6, 0, 1, 0], [2026, 5, 5, 0, 1, 0, 0], [2026, 5, 4, 1, 9, 75, 72], [2026, 5, 4, 2, 4, 3, 1], [2026, 5, 4, 3, 2, 1, 0], [2026, 5, 4, 0, 18, 1, 1], [2026, 5, 13, 0, 73, 12, 2], [2026, 5, 6, 1, 34, 161, 152], [2026, 5, 6, 2, 20, 3, 0], [2026, 5, 6, 7, 27, 3, 0], [2026, 5, 6, 3, 2, 0, 0], [2026, 5, 6, 10, 2, 0, 0], [2026, 5, 6, 0, 15, 5, 0], [2026, 5, 22, 0, 0, 1, 0], [2026, 5, 2, 3, 4, 1, 0], [2026, 5, 2, 0, 86, 12, 0], [2026, 5, 20, 0, 1, 0, 0], [2026, 5, 11, 0, 142, 6, 0], [2026, 5, 17, 0, 4, 2, 0], [2026, 5, 17, 14, 1, 0, 0], [2026, 5, 0, 1, 374, 108, 86], [2026, 5, 0, 6, 3, 2, 1], [2026, 5, 0, 2, 60, 3, 1], [2026, 5, 0, 3, 20, 5, 0], [2026, 5, 0, 0, 50, 3, 1], [2026, 5, 15, 3, 2, 0, 0], [2026, 5, 15, 0, 38, 2, 0], [2026, 5, 12, 1, 127, 5, 2], [2026, 5, 12, 5, 57, 4, 0], [2026, 5, 12, 0, 5, 0, 0], [2026, 6, 10, 0, 27, 11, 7], [2026, 6, 9, 1, 11, 119, 117], [2026, 6, 9, 2, 62, 6, 0], [2026, 6, 9, 3, 74, 13, 12], [2026, 6, 9, 0, 2, 2, 2], [2026, 6, 18, 0, 6, 11, 0], [2026, 6, 7, 3, 21, 2, 0], [2026, 6, 7, 0, 16, 4, 0], [2026, 6, 16, 3, 2, 0, 0], [2026, 6, 16, 0, 8, 2, 2], [2026, 6, 3, 0, 2, 2, 0], [2026, 6, 5, 0, 1, 0, 0], [2026, 6, 4, 1, 5, 34, 32], [2026, 6, 4, 2, 14, 13, 1], [2026, 6, 4, 9, 2, 0, 0], [2026, 6, 4, 3, 8, 5, 0], [2026, 6, 4, 0, 27, 1, 0], [2026, 6, 13, 0, 66, 10, 1], [2026, 6, 6, 1, 20, 82, 81], [2026, 6, 6, 2, 65, 24, 3], [2026, 6, 6, 7, 22, 1, 0], [2026, 6, 6, 3, 12, 4, 1], [2026, 6, 6, 10, 1, 0, 0], [2026, 6, 6, 0, 11, 0, 0], [2026, 6, 2, 3, 27, 1, 0], [2026, 6, 2, 0, 27, 1, 0], [2026, 6, 11, 0, 130, 8, 2], [2026, 6, 17, 0, 5, 0, 0], [2026, 6, 0, 1, 49, 290, 288], [2026, 6, 0, 2, 275, 46, 16], [2026, 6, 0, 3, 48, 10, 4], [2026, 6, 0, 0, 110, 2, 1], [2026, 6, 15, 3, 12, 0, 0], [2026, 6, 15, 0, 11, 4, 0], [2026, 6, 12, 1, 107, 3, 0], [2026, 6, 12, 5, 63, 5, 1], [2026, 7, 10, 0, 19, 8, 3], [2026, 7, 21, 1, 9, 2, 0], [2026, 7, 9, 1, 59, 356, 353], [2026, 7, 9, 2, 251, 42, 27], [2026, 7, 9, 3, 187, 28, 23], [2026, 7, 9, 0, 7, 4, 3], [2026, 7, 18, 0, 0, 19, 1], [2026, 7, 7, 3, 24, 2, 0], [2026, 7, 7, 0, 23, 0, 0], [2026, 7, 16, 3, 4, 0, 0], [2026, 7, 16, 0, 10, 1, 1], [2026, 7, 3, 0, 2, 1, 0], [2026, 7, 8, 0, 2, 3, 1], [2026, 7, 5, 0, 0, 1, 0], [2026, 7, 4, 1, 18, 80, 78], [2026, 7, 4, 2, 61, 34, 13], [2026, 7, 4, 9, 2, 0, 0], [2026, 7, 4, 3, 14, 5, 4], [2026, 7, 4, 0, 71, 1, 0], [2026, 7, 13, 0, 36, 17, 2], [2026, 7, 6, 1, 24, 92, 90], [2026, 7, 6, 2, 89, 23, 9], [2026, 7, 6, 7, 24, 3, 1], [2026, 7, 6, 3, 15, 2, 1], [2026, 7, 6, 10, 1, 1, 0], [2026, 7, 6, 0, 18, 3, 1], [2026, 7, 22, 0, 3, 4, 1], [2026, 7, 2, 3, 28, 4, 0], [2026, 7, 2, 0, 6, 2, 0], [2026, 7, 20, 0, 1, 0, 0], [2026, 7, 11, 0, 118, 5, 0], [2026, 7, 17, 0, 2, 1, 0], [2026, 7, 0, 1, 313, 38, 15], [2026, 7, 0, 2, 16, 2, 1], [2026, 7, 0, 8, 9, 0, 0], [2026, 7, 0, 3, 1, 1, 1], [2026, 7, 0, 0, 14, 2, 1], [2026, 7, 15, 2, 0, 1, 0], [2026, 7, 15, 3, 19, 0, 0], [2026, 7, 15, 0, 2, 0, 0], [2026, 7, 12, 1, 30, 2, 0], [2026, 7, 12, 5, 67, 1, 0], [2026, 7, 12, 0, 2, 1, 0], [2026, 8, 10, 10, 1, 0, 0], [2026, 8, 10, 0, 13, 5, 4], [2026, 8, 21, 1, 84, 10, 0], [2026, 8, 9, 1, 11, 59, 57], [2026, 8, 9, 2, 408, 56, 2], [2026, 8, 9, 3, 190, 38, 10], [2026, 8, 9, 0, 40, 18, 8], [2026, 8, 18, 0, 2, 14, 0], [2026, 8, 7, 3, 27, 3, 0], [2026, 8, 7, 0, 36, 8, 2], [2026, 8, 16, 3, 2, 0, 0], [2026, 8, 16, 0, 6, 1, 0], [2026, 8, 3, 0, 1, 0, 0], [2026, 8, 8, 0, 4, 1, 1], [2026, 8, 19, 0, 1, 0, 0], [2026, 8, 5, 0, 2, 0, 0], [2026, 8, 4, 1, 0, 42, 41], [2026, 8, 4, 2, 30, 7, 0], [2026, 8, 4, 3, 4, 3, 0], [2026, 8, 4, 10, 0, 1, 0], [2026, 8, 4, 0, 56, 0, 0], [2026, 8, 13, 0, 103, 16, 0], [2026, 8, 6, 1, 7, 136, 133], [2026, 8, 6, 2, 122, 16, 5], [2026, 8, 6, 7, 41, 0, 0], [2026, 8, 6, 3, 22, 5, 3], [2026, 8, 6, 0, 25, 2, 0], [2026, 8, 22, 0, 0, 1, 0], [2026, 8, 2, 3, 45, 8, 0], [2026, 8, 2, 0, 6, 0, 0], [2026, 8, 20, 0, 1, 1, 0], [2026, 8, 11, 0, 164, 13, 0], [2026, 8, 17, 0, 1, 0, 0], [2026, 8, 0, 1, 364, 28, 2], [2026, 8, 0, 0, 56, 1, 0], [2026, 8, 15, 2, 1, 0, 0], [2026, 8, 15, 3, 17, 1, 0], [2026, 8, 15, 0, 25, 12, 2], [2026, 8, 12, 1, 50, 4, 0], [2026, 8, 12, 5, 35, 1, 0], [2026, 8, 12, 0, 1, 2, 0], [2026, 9, 10, 0, 13, 2, 0], [2026, 9, 23, 1, 24, 3, 0], [2026, 9, 21, 1, 64, 1, 0], [2026, 9, 9, 2, 619, 39, 0], [2026, 9, 9, 3, 130, 7, 1], [2026, 9, 9, 0, 45, 14, 7], [2026, 9, 18, 0, 2, 10, 1], [2026, 9, 7, 3, 55, 3, 0], [2026, 9, 7, 0, 56, 6, 2], [2026, 9, 16, 3, 15, 2, 0], [2026, 9, 16, 0, 16, 1, 0], [2026, 9, 8, 0, 5, 0, 0], [2026, 9, 5, 0, 1, 1, 0], [2026, 9, 4, 1, 0, 73, 72], [2026, 9, 4, 2, 46, 18, 0], [2026, 9, 4, 3, 21, 1, 0], [2026, 9, 4, 0, 25, 1, 0], [2026, 9, 13, 0, 77, 19, 3], [2026, 9, 6, 1, 1, 145, 144], [2026, 9, 6, 2, 131, 10, 0], [2026, 9, 6, 7, 38, 3, 2], [2026, 9, 6, 3, 25, 2, 0], [2026, 9, 6, 0, 19, 4, 1], [2026, 9, 22, 0, 2, 0, 0], [2026, 9, 2, 3, 29, 3, 0], [2026, 9, 2, 0, 4, 1, 0], [2026, 9, 11, 0, 99, 6, 1], [2026, 9, 17, 0, 5, 1, 0], [2026, 9, 0, 1, 399, 31, 0], [2026, 9, 0, 0, 71, 3, 0], [2026, 9, 15, 3, 7, 0, 0], [2026, 9, 15, 0, 4, 2, 1], [2026, 9, 12, 1, 58, 3, 0], [2026, 9, 12, 5, 62, 1, 0], [2026, 9, 12, 0, 2, 1, 0]], "dupBucket": [[2024, 1, "10–30 min", 7], [2024, 1, "1–10 min", 117], [2024, 1, "30–60 min", 5], [2024, 1, "até 1 min", 14], [2024, 2, "10–30 min", 27], [2024, 2, "1–10 min", 338], [2024, 2, "30–60 min", 19], [2024, 2, "até 1 min", 162], [2024, 3, "10–30 min", 10], [2024, 3, "1–10 min", 93], [2024, 3, "30–60 min", 12], [2024, 3, "até 1 min", 43], [2024, 4, "10–30 min", 12], [2024, 4, "1–10 min", 138], [2024, 4, "30–60 min", 5], [2024, 4, "até 1 min", 47], [2024, 5, "10–30 min", 3], [2024, 5, "1–10 min", 87], [2024, 5, "30–60 min", 2], [2024, 5, "até 1 min", 33], [2024, 6, "10–30 min", 8], [2024, 6, "1–10 min", 95], [2024, 6, "30–60 min", 2], [2024, 6, "até 1 min", 12], [2024, 7, "10–30 min", 6], [2024, 7, "1–10 min", 65], [2024, 7, "30–60 min", 4], [2024, 7, "até 1 min", 61], [2024, 8, "10–30 min", 14], [2024, 8, "1–10 min", 89], [2024, 8, "30–60 min", 8], [2024, 8, "até 1 min", 60], [2024, 9, "10–30 min", 25], [2024, 9, "1–10 min", 133], [2024, 9, "30–60 min", 7], [2024, 9, "até 1 min", 51], [2024, 10, "10–30 min", 23], [2024, 10, "1–10 min", 241], [2024, 10, "30–60 min", 4], [2024, 10, "até 1 min", 36], [2024, 11, "10–30 min", 13], [2024, 11, "1–10 min", 67], [2024, 11, "30–60 min", 3], [2024, 11, "até 1 min", 52], [2024, 12, "10–30 min", 17], [2024, 12, "1–10 min", 33], [2024, 12, "30–60 min", 4], [2024, 12, "até 1 min", 39], [2025, 1, "10–30 min", 18], [2025, 1, "1–10 min", 33], [2025, 1, "30–60 min", 11], [2025, 1, "até 1 min", 44], [2025, 2, "10–30 min", 7], [2025, 2, "1–10 min", 29], [2025, 2, "30–60 min", 5], [2025, 2, "até 1 min", 32], [2025, 3, "10–30 min", 16], [2025, 3, "1–10 min", 30], [2025, 3, "30–60 min", 8], [2025, 3, "até 1 min", 33], [2025, 4, "10–30 min", 4], [2025, 4, "1–10 min", 21], [2025, 4, "30–60 min", 7], [2025, 4, "até 1 min", 14], [2025, 5, "10–30 min", 4], [2025, 5, "1–10 min", 37], [2025, 5, "30–60 min", 2], [2025, 5, "até 1 min", 20], [2025, 6, "10–30 min", 9], [2025, 6, "1–10 min", 49], [2025, 6, "até 1 min", 50], [2025, 7, "10–30 min", 7], [2025, 7, "1–10 min", 38], [2025, 7, "até 1 min", 34], [2025, 8, "10–30 min", 10], [2025, 8, "1–10 min", 56], [2025, 8, "30–60 min", 1], [2025, 8, "até 1 min", 18], [2025, 9, "10–30 min", 8], [2025, 9, "1–10 min", 24], [2025, 9, "30–60 min", 1], [2025, 9, "até 1 min", 29], [2025, 10, "10–30 min", 11], [2025, 10, "1–10 min", 18], [2025, 10, "30–60 min", 2], [2025, 10, "até 1 min", 19], [2025, 11, "10–30 min", 8], [2025, 11, "1–10 min", 29], [2025, 11, "30–60 min", 1], [2025, 11, "até 1 min", 26], [2025, 12, "10–30 min", 3], [2025, 12, "1–10 min", 21], [2025, 12, "30–60 min", 1], [2025, 12, "até 1 min", 16], [2026, 1, "10–30 min", 23], [2026, 1, "1–10 min", 22], [2026, 1, "30–60 min", 16], [2026, 1, "até 1 min", 20], [2026, 2, "10–30 min", 5], [2026, 2, "1–10 min", 19], [2026, 2, "até 1 min", 11], [2026, 3, "10–30 min", 2], [2026, 3, "1–10 min", 13], [2026, 3, "30–60 min", 1], [2026, 3, "até 1 min", 8], [2026, 4, "10–30 min", 5], [2026, 4, "1–10 min", 11], [2026, 4, "até 1 min", 12], [2026, 5, "10–30 min", 202], [2026, 5, "1–10 min", 118], [2026, 5, "30–60 min", 11], [2026, 5, "até 1 min", 7], [2026, 6, "10–30 min", 378], [2026, 6, "1–10 min", 179], [2026, 6, "30–60 min", 5], [2026, 6, "até 1 min", 9], [2026, 7, "10–30 min", 407], [2026, 7, "1–10 min", 213], [2026, 7, "30–60 min", 6], [2026, 7, "até 1 min", 4], [2026, 8, "10–30 min", 190], [2026, 8, "1–10 min", 73], [2026, 8, "30–60 min", 3], [2026, 8, "até 1 min", 4], [2026, 9, "10–30 min", 154], [2026, 9, "1–10 min", 73], [2026, 9, "30–60 min", 7], [2026, 9, "até 1 min", 1]], "dupSig": [[2024, 1, "Facebook → Facebook", 1], [2024, 1, "Fale Conosco → Fale Conosco", 1], [2024, 1, "Site → Site", 141], [2024, 2, "Facebook → Facebook", 1], [2024, 2, "Facebook → Site", 1], [2024, 2, "Site → Site", 544], [2024, 3, "Site → Site", 158], [2024, 4, "Facebook → Facebook", 1], [2024, 4, "Site → Site", 201], [2024, 5, "Facebook → Facebook", 1], [2024, 5, "Site → Site", 124], [2024, 6, "Fale Conosco → Fale Conosco", 2], [2024, 6, "Site → Site", 115], [2024, 7, "Facebook → Facebook", 6], [2024, 7, "Fale Conosco → Fale Conosco", 11], [2024, 7, "LP- Guarará → LP- Guarará", 1], [2024, 7, "LP- Guarará → Site", 2], [2024, 7, "LP- Praça Lindenberg → LP- Praça Lindenberg", 2], [2024, 7, "LP- Praça Lindenberg → Site/WhatsApp", 1], [2024, 7, "Site → LP- Guarará", 1], [2024, 7, "Site → Site", 58], [2024, 7, "Site → Site/WhatsApp", 13], [2024, 7, "Site/WhatsApp → Facebook", 1], [2024, 7, "Site/WhatsApp → Site", 29], [2024, 7, "Site/WhatsApp → Site/WhatsApp", 11], [2024, 8, "Facebook → Facebook", 4], [2024, 8, "Facebook → LP- Praça Lindenberg", 1], [2024, 8, "Facebook → Site/WhatsApp", 1], [2024, 8, "Fale Conosco → Fale Conosco", 21], [2024, 8, "LP- Groelandia → LP- Groelandia", 1], [2024, 8, "LP- Guarará → Site/WhatsApp", 1], [2024, 8, "LP- Praça Lindenberg → LP- Praça Lindenberg", 3], [2024, 8, "Site → LP- Guarará", 1], [2024, 8, "Site → Site", 68], [2024, 8, "Site → Site/WhatsApp", 25], [2024, 8, "Site/WhatsApp → LP- Praça Lindenberg", 1], [2024, 8, "Site/WhatsApp → Site", 39], [2024, 8, "Site/WhatsApp → Site/WhatsApp", 5], [2024, 9, "Facebook → Facebook", 38], [2024, 9, "Facebook → Site", 5], [2024, 9, "Facebook → Site/WhatsApp", 4], [2024, 9, "Fale Conosco → Fale Conosco", 3], [2024, 9, "LP- Groelandia → LP- Groelandia", 1], [2024, 9, "LP- Guarará → LP- Guarará", 1], [2024, 9, "LP- Praça Lindenberg → Site/WhatsApp", 1], [2024, 9, "Site → Facebook", 1], [2024, 9, "Site → LP- Praça Lindenberg", 1], [2024, 9, "Site → Site", 94], [2024, 9, "Site → Site/WhatsApp", 23], [2024, 9, "Site/WhatsApp → Facebook", 2], [2024, 9, "Site/WhatsApp → LP- Guarará", 3], [2024, 9, "Site/WhatsApp → LP- Praça Lindenberg", 1], [2024, 9, "Site/WhatsApp → Site", 31], [2024, 9, "Site/WhatsApp → Site/WhatsApp", 7], [2024, 10, "Facebook → Facebook", 114], [2024, 10, "Facebook → Site", 15], [2024, 10, "Facebook → Site/WhatsApp", 1], [2024, 10, "Fale Conosco → Fale Conosco", 7], [2024, 10, "Site → Facebook", 3], [2024, 10, "Site → Site", 112], [2024, 10, "Site → Site/WhatsApp", 15], [2024, 10, "Site/WhatsApp → Facebook", 2], [2024, 10, "Site/WhatsApp → LP- Guarará", 1], [2024, 10, "Site/WhatsApp → Site", 24], [2024, 10, "Site/WhatsApp → Site/WhatsApp", 10], [2024, 11, "Facebook → Facebook", 10], [2024, 11, "Facebook → Site", 9], [2024, 11, "Facebook → Site/WhatsApp", 6], [2024, 11, "Fale Conosco → Fale Conosco", 9], [2024, 11, "LP- Praça Lindenberg → Site/WhatsApp", 2], [2024, 11, "Site → Facebook", 4], [2024, 11, "Site → Site", 43], [2024, 11, "Site → Site/WhatsApp", 40], [2024, 11, "Site/WhatsApp → Facebook", 2], [2024, 11, "Site/WhatsApp → Site", 7], [2024, 11, "Site/WhatsApp → Site/WhatsApp", 3], [2024, 12, "Facebook → Facebook", 1], [2024, 12, "Fale Conosco → Fale Conosco", 8], [2024, 12, "LP- Guarará → Site", 3], [2024, 12, "LP- Guarará → Site/WhatsApp", 1], [2024, 12, "LP- Praça Lindenberg → Site", 1], [2024, 12, "Site → Facebook", 10], [2024, 12, "Site → Site", 28], [2024, 12, "Site → Site/WhatsApp", 29], [2024, 12, "Site/WhatsApp → Facebook", 5], [2024, 12, "Site/WhatsApp → LP- Praça Lindenberg", 1], [2024, 12, "Site/WhatsApp → Site", 2], [2024, 12, "Site/WhatsApp → Site/WhatsApp", 4], [2025, 1, "Facebook → Facebook", 2], [2025, 1, "Facebook → Site", 1], [2025, 1, "Fale Conosco → Fale Conosco", 9], [2025, 1, "Fale Conosco → Site", 2], [2025, 1, "LP- Guarará → Site", 2], [2025, 1, "LP- Guarará → Site/WhatsApp", 1], [2025, 1, "Site → Facebook", 13], [2025, 1, "Site → Site", 41], [2025, 1, "Site → Site/WhatsApp", 28], [2025, 1, "Site/WhatsApp → Facebook", 4], [2025, 1, "Site/WhatsApp → Site", 2], [2025, 1, "Site/WhatsApp → Site/WhatsApp", 1], [2025, 2, "Fale Conosco → Fale Conosco", 7], [2025, 2, "Fale Conosco → Site", 1], [2025, 2, "LP- Guarará → Site", 2], [2025, 2, "LP- Guarará → Site/WhatsApp", 1], [2025, 2, "Site → Facebook", 2], [2025, 2, "Site → Site", 27], [2025, 2, "Site → Site/WhatsApp", 30], [2025, 2, "Site/WhatsApp → Facebook", 1], [2025, 2, "Site/WhatsApp → Site", 2], [2025, 3, "Facebook → Site", 1], [2025, 3, "Fale Conosco → Fale Conosco", 4], [2025, 3, "LP- Praça Lindenberg → Site/WhatsApp", 1], [2025, 3, "Site → Facebook", 12], [2025, 3, "Site → Site", 36], [2025, 3, "Site → Site/WhatsApp", 27], [2025, 3, "Site/WhatsApp → Facebook", 6], [2025, 4, "Facebook → Facebook", 2], [2025, 4, "LP- Guarará → Site", 1], [2025, 4, "Site → Facebook", 2], [2025, 4, "Site → Site", 21], [2025, 4, "Site → Site/WhatsApp", 15], [2025, 4, "Site/WhatsApp → Facebook", 2], [2025, 4, "Site/WhatsApp → Site", 1], [2025, 4, "Site/WhatsApp → Site/WhatsApp", 2], [2025, 5, "Facebook → Facebook", 1], [2025, 5, "Fale Conosco → Fale Conosco", 2], [2025, 5, "LP- Guarará → Site", 1], [2025, 5, "LP- Praça Lindenberg → Site/WhatsApp", 1], [2025, 5, "Site → Facebook", 3], [2025, 5, "Site → Site", 33], [2025, 5, "Site → Site/WhatsApp", 21], [2025, 5, "Site/WhatsApp → Facebook", 1], [2025, 6, "Fale Conosco → Fale Conosco", 1], [2025, 6, "LP- Guarará → Site", 3], [2025, 6, "Site → Facebook", 7], [2025, 6, "Site → Site", 91], [2025, 6, "Site → Site/WhatsApp", 5], [2025, 6, "Site/WhatsApp → Site/WhatsApp", 1], [2025, 7, "Fale Conosco → Fale Conosco", 7], [2025, 7, "LP- Guarará → Site", 5], [2025, 7, "Site → Fale Conosco", 1], [2025, 7, "Site → Site", 66], [2025, 8, "Fale Conosco → Fale Conosco", 1], [2025, 8, "LP- Guarará → LP- Guarará", 1], [2025, 8, "LP- Guarará → Site", 3], [2025, 8, "Site → Facebook", 7], [2025, 8, "Site → Site", 73], [2025, 9, "Facebook → Facebook", 3], [2025, 9, "Fale Conosco → Fale Conosco", 1], [2025, 9, "Site → Facebook", 1], [2025, 9, "Site → Site", 55], [2025, 9, "Site/WhatsApp → Site/WhatsApp", 2], [2025, 10, "Facebook → Facebook", 5], [2025, 10, "Facebook → Site", 1], [2025, 10, "Fale Conosco → Fale Conosco", 1], [2025, 10, "Site → Facebook", 1], [2025, 10, "Site → Site", 36], [2025, 10, "Site → Site/WhatsApp", 2], [2025, 10, "Site/WhatsApp → Site", 1], [2025, 10, "Site/WhatsApp → Site/WhatsApp", 3], [2025, 11, "Facebook → Facebook", 6], [2025, 11, "Fale Conosco → Fale Conosco", 1], [2025, 11, "LP- Guarará → Facebook", 2], [2025, 11, "Site → Facebook", 1], [2025, 11, "Site → Site", 54], [2025, 12, "Facebook → Facebook", 3], [2025, 12, "Fale Conosco → Fale Conosco", 2], [2025, 12, "LP- Guarará → Facebook", 2], [2025, 12, "Site → Facebook", 2], [2025, 12, "Site → Site", 31], [2025, 12, "Site → Site/WhatsApp", 1], [2026, 1, "Facebook → Facebook", 8], [2026, 1, "Facebook → Site", 1], [2026, 1, "Fale Conosco → Fale Conosco", 1], [2026, 1, "Site → Site", 71], [2026, 2, "Facebook → Facebook", 3], [2026, 2, "LP - Vista Alto de Pinheiros → LP - Vista Alto de Pinheiros", 2], [2026, 2, "LP- Guarará → Facebook", 1], [2026, 2, "Site → Facebook", 3], [2026, 2, "Site → Site", 26], [2026, 3, "Facebook → Facebook", 4], [2026, 3, "Fale Conosco → Site", 1], [2026, 3, "LP- Guarará → LP- Guarará", 1], [2026, 3, "Site → Site", 18], [2026, 4, "Facebook → Facebook", 4], [2026, 4, "Facebook → Site", 1], [2026, 4, "Fale Conosco → Fale Conosco", 1], [2026, 4, "Instagram → Facebook", 3], [2026, 4, "Site → Facebook", 1], [2026, 4, "Site → Site", 18], [2026, 5, "Facebook → Facebook", 3], [2026, 5, "Facebook → Instagram", 9], [2026, 5, "Facebook → Lais - IA", 2], [2026, 5, "Fale Conosco → Fale Conosco", 1], [2026, 5, "Instagram → Facebook", 248], [2026, 5, "Instagram → Site", 3], [2026, 5, "Lais - IA → Facebook", 60], [2026, 5, "Site → Facebook", 1], [2026, 5, "Site → Instagram", 1], [2026, 5, "Site → Site", 10], [2026, 6, "Facebook → Facebook", 1], [2026, 6, "Facebook → Instagram", 20], [2026, 6, "Facebook → Lais - IA", 17], [2026, 6, "Instagram → Facebook", 397], [2026, 6, "Instagram → Site", 1], [2026, 6, "LP - Vista Alto de Pinheiros → LP - Vista Alto de Pinheiros", 1], [2026, 6, "Lais - IA → Facebook", 117], [2026, 6, "Lais - IA → Site", 1], [2026, 6, "Site → Facebook", 3], [2026, 6, "Site → Site", 13], [2026, 7, "Facebook → Facebook", 2], [2026, 7, "Facebook → Instagram", 50], [2026, 7, "Facebook → Lais - IA", 29], [2026, 7, "Facebook → Site", 1], [2026, 7, "Instagram → Facebook", 363], [2026, 7, "Instagram → Site", 2], [2026, 7, "LP - Moema → LP - Moema", 1], [2026, 7, "LP - Moema → Site", 1], [2026, 7, "Lais - IA → Facebook", 166], [2026, 7, "Lais - IA → Site", 2], [2026, 7, "Site → Facebook", 5], [2026, 7, "Site → Site", 8], [2026, 8, "Facebook → Facebook", 3], [2026, 8, "Facebook → Instagram", 6], [2026, 8, "Facebook → Lais - IA", 13], [2026, 8, "Instagram → Facebook", 171], [2026, 8, "Instagram → Site", 5], [2026, 8, "Lais - IA → Facebook", 59], [2026, 8, "Lais - IA → Site", 2], [2026, 8, "Site → Instagram", 1], [2026, 8, "Site → Site", 10], [2026, 9, "Instagram → Facebook", 175], [2026, 9, "Instagram → Site", 7], [2026, 9, "LP - Moema → LP - Moema", 2], [2026, 9, "Lais - IA → Facebook", 41], [2026, 9, "Lais - IA → Lais - IA", 1], [2026, 9, "Site → Site", 9]], "dupHist": [[2024, 1, 0, 6], [2024, 1, 1, 13], [2024, 1, 2, 8], [2024, 1, 3, 15], [2024, 1, 4, 7], [2024, 1, 5, 63], [2024, 1, 6, 9], [2024, 1, 7, 9], [2024, 1, 9, 1], [2024, 1, 10, 1], [2024, 1, 13, 2], [2024, 1, 15, 1], [2024, 1, 16, 2], [2024, 1, 17, 1], [2024, 1, 38, 1], [2024, 1, 45, 1], [2024, 1, 51, 1], [2024, 1, 53, 1], [2024, 1, 55, 1], [2024, 2, 0, 116], [2024, 2, 1, 75], [2024, 2, 2, 56], [2024, 2, 3, 86], [2024, 2, 4, 24], [2024, 2, 5, 109], [2024, 2, 6, 15], [2024, 2, 7, 15], [2024, 2, 8, 2], [2024, 2, 9, 1], [2024, 2, 10, 3], [2024, 2, 11, 2], [2024, 2, 12, 3], [2024, 2, 13, 3], [2024, 2, 14, 1], [2024, 2, 15, 2], [2024, 2, 16, 4], [2024, 2, 21, 1], [2024, 2, 22, 2], [2024, 2, 23, 1], [2024, 2, 27, 4], [2024, 2, 28, 1], [2024, 2, 29, 1], [2024, 2, 30, 1], [2024, 2, 31, 1], [2024, 2, 32, 3], [2024, 2, 33, 1], [2024, 2, 34, 1], [2024, 2, 35, 2], [2024, 2, 36, 1], [2024, 2, 42, 1], [2024, 2, 47, 1], [2024, 2, 50, 1], [2024, 2, 51, 3], [2024, 2, 56, 2], [2024, 2, 57, 1], [2024, 3, 0, 23], [2024, 3, 1, 33], [2024, 3, 2, 18], [2024, 3, 3, 17], [2024, 3, 4, 6], [2024, 3, 5, 16], [2024, 3, 6, 9], [2024, 3, 7, 8], [2024, 3, 8, 2], [2024, 3, 9, 2], [2024, 3, 10, 3], [2024, 3, 13, 3], [2024, 3, 14, 1], [2024, 3, 15, 2], [2024, 3, 20, 1], [2024, 3, 22, 1], [2024, 3, 25, 1], [2024, 3, 31, 1], [2024, 3, 37, 1], [2024, 3, 38, 2], [2024, 3, 40, 1], [2024, 3, 46, 1], [2024, 3, 47, 2], [2024, 3, 51, 1], [2024, 3, 55, 1], [2024, 3, 57, 1], [2024, 3, 58, 1], [2024, 4, 0, 21], [2024, 4, 1, 37], [2024, 4, 2, 27], [2024, 4, 3, 31], [2024, 4, 4, 14], [2024, 4, 5, 28], [2024, 4, 6, 11], [2024, 4, 7, 12], [2024, 4, 8, 1], [2024, 4, 9, 2], [2024, 4, 10, 5], [2024, 4, 12, 1], [2024, 4, 16, 1], [2024, 4, 17, 3], [2024, 4, 18, 1], [2024, 4, 22, 1], [2024, 4, 23, 1], [2024, 4, 38, 1], [2024, 4, 44, 1], [2024, 4, 46, 1], [2024, 4, 52, 1], [2024, 4, 59, 1], [2024, 5, 0, 21], [2024, 5, 1, 26], [2024, 5, 2, 22], [2024, 5, 3, 17], [2024, 5, 4, 10], [2024, 5, 5, 16], [2024, 5, 6, 4], [2024, 5, 7, 3], [2024, 5, 8, 1], [2024, 5, 10, 1], [2024, 5, 17, 1], [2024, 5, 19, 1], [2024, 5, 30, 2], [2024, 6, 0, 5], [2024, 6, 1, 15], [2024, 6, 2, 18], [2024, 6, 3, 21], [2024, 6, 4, 9], [2024, 6, 5, 19], [2024, 6, 6, 12], [2024, 6, 7, 7], [2024, 6, 9, 1], [2024, 6, 10, 3], [2024, 6, 13, 3], [2024, 6, 14, 1], [2024, 6, 17, 1], [2024, 6, 34, 1], [2024, 6, 56, 1], [2024, 7, 0, 48], [2024, 7, 1, 16], [2024, 7, 2, 4], [2024, 7, 3, 10], [2024, 7, 4, 8], [2024, 7, 5, 13], [2024, 7, 6, 21], [2024, 7, 7, 3], [2024, 7, 8, 1], [2024, 7, 9, 2], [2024, 7, 10, 1], [2024, 7, 15, 2], [2024, 7, 18, 1], [2024, 7, 19, 1], [2024, 7, 20, 1], [2024, 7, 37, 1], [2024, 7, 42, 1], [2024, 7, 57, 1], [2024, 7, 58, 1], [2024, 8, 0, 39], [2024, 8, 1, 30], [2024, 8, 2, 7], [2024, 8, 3, 8], [2024, 8, 4, 5], [2024, 8, 5, 14], [2024, 8, 6, 40], [2024, 8, 7, 5], [2024, 8, 8, 1], [2024, 8, 12, 2], [2024, 8, 15, 3], [2024, 8, 16, 2], [2024, 8, 19, 1], [2024, 8, 20, 2], [2024, 8, 21, 1], [2024, 8, 23, 2], [2024, 8, 26, 1], [2024, 8, 32, 1], [2024, 8, 36, 1], [2024, 8, 37, 1], [2024, 8, 41, 1], [2024, 8, 44, 1], [2024, 8, 48, 1], [2024, 8, 56, 1], [2024, 8, 58, 1], [2024, 9, 0, 40], [2024, 9, 1, 14], [2024, 9, 2, 7], [2024, 9, 3, 2], [2024, 9, 4, 6], [2024, 9, 5, 27], [2024, 9, 6, 81], [2024, 9, 7, 6], [2024, 9, 8, 1], [2024, 9, 10, 3], [2024, 9, 11, 1], [2024, 9, 12, 1], [2024, 9, 13, 2], [2024, 9, 14, 3], [2024, 9, 15, 4], [2024, 9, 16, 2], [2024, 9, 18, 1], [2024, 9, 19, 1], [2024, 9, 20, 1], [2024, 9, 21, 4], [2024, 9, 22, 1], [2024, 9, 28, 1], [2024, 9, 38, 1], [2024, 9, 41, 1], [2024, 9, 43, 1], [2024, 9, 47, 2], [2024, 9, 54, 1], [2024, 9, 59, 1], [2024, 10, 0, 26], [2024, 10, 1, 15], [2024, 10, 2, 1], [2024, 10, 3, 5], [2024, 10, 4, 7], [2024, 10, 5, 41], [2024, 10, 6, 165], [2024, 10, 7, 15], [2024, 10, 8, 1], [2024, 10, 9, 1], [2024, 10, 10, 1], [2024, 10, 11, 4], [2024, 10, 12, 6], [2024, 10, 13, 2], [2024, 10, 14, 1], [2024, 10, 15, 1], [2024, 10, 16, 2], [2024, 10, 19, 1], [2024, 10, 20, 1], [2024, 10, 21, 2], [2024, 10, 25, 1], [2024, 10, 27, 1], [2024, 10, 31, 1], [2024, 10, 40, 1], [2024, 10, 43, 1], [2024, 10, 57, 1], [2024, 11, 0, 43], [2024, 11, 1, 13], [2024, 11, 2, 3], [2024, 11, 3, 3], [2024, 11, 4, 5], [2024, 11, 5, 19], [2024, 11, 6, 10], [2024, 11, 7, 10], [2024, 11, 8, 11], [2024, 11, 9, 1], [2024, 11, 10, 2], [2024, 11, 11, 1], [2024, 11, 12, 5], [2024, 11, 15, 2], [2024, 11, 16, 1], [2024, 11, 17, 1], [2024, 11, 22, 1], [2024, 11, 25, 1], [2024, 11, 31, 1], [2024, 11, 33, 1], [2024, 11, 53, 1], [2024, 12, 0, 35], [2024, 12, 1, 7], [2024, 12, 2, 2], [2024, 12, 3, 5], [2024, 12, 4, 6], [2024, 12, 5, 3], [2024, 12, 6, 6], [2024, 12, 7, 5], [2024, 12, 8, 2], [2024, 12, 9, 1], [2024, 12, 11, 1], [2024, 12, 12, 2], [2024, 12, 14, 2], [2024, 12, 15, 2], [2024, 12, 16, 1], [2024, 12, 17, 1], [2024, 12, 18, 1], [2024, 12, 19, 1], [2024, 12, 22, 1], [2024, 12, 23, 1], [2024, 12, 24, 1], [2024, 12, 28, 1], [2024, 12, 29, 2], [2024, 12, 32, 1], [2024, 12, 33, 1], [2024, 12, 37, 1], [2024, 12, 49, 1], [2025, 1, 0, 34], [2025, 1, 1, 11], [2025, 1, 2, 4], [2025, 1, 3, 4], [2025, 1, 4, 2], [2025, 1, 5, 6], [2025, 1, 6, 3], [2025, 1, 7, 6], [2025, 1, 8, 6], [2025, 1, 9, 1], [2025, 1, 10, 1], [2025, 1, 11, 2], [2025, 1, 13, 2], [2025, 1, 14, 1], [2025, 1, 16, 1], [2025, 1, 19, 1], [2025, 1, 24, 2], [2025, 1, 25, 2], [2025, 1, 26, 2], [2025, 1, 27, 1], [2025, 1, 28, 3], [2025, 1, 30, 2], [2025, 1, 34, 1], [2025, 1, 36, 2], [2025, 1, 37, 1], [2025, 1, 40, 1], [2025, 1, 46, 1], [2025, 1, 49, 2], [2025, 1, 55, 1], [2025, 2, 0, 27], [2025, 2, 1, 7], [2025, 2, 2, 4], [2025, 2, 3, 5], [2025, 2, 4, 6], [2025, 2, 5, 3], [2025, 2, 6, 2], [2025, 2, 7, 6], [2025, 2, 8, 1], [2025, 2, 12, 2], [2025, 2, 15, 1], [2025, 2, 18, 1], [2025, 2, 20, 1], [2025, 2, 24, 1], [2025, 2, 30, 1], [2025, 2, 31, 1], [2025, 2, 32, 1], [2025, 2, 33, 1], [2025, 2, 35, 1], [2025, 2, 37, 1], [2025, 3, 0, 26], [2025, 3, 1, 8], [2025, 3, 2, 1], [2025, 3, 4, 11], [2025, 3, 5, 3], [2025, 3, 6, 6], [2025, 3, 7, 3], [2025, 3, 8, 3], [2025, 3, 9, 2], [2025, 3, 11, 2], [2025, 3, 12, 2], [2025, 3, 15, 1], [2025, 3, 16, 1], [2025, 3, 17, 1], [2025, 3, 18, 1], [2025, 3, 20, 1], [2025, 3, 22, 1], [2025, 3, 23, 3], [2025, 3, 24, 1], [2025, 3, 28, 1], [2025, 3, 29, 1], [2025, 3, 30, 1], [2025, 3, 38, 2], [2025, 3, 44, 1], [2025, 3, 47, 2], [2025, 3, 48, 1], [2025, 3, 55, 1], [2025, 4, 0, 12], [2025, 4, 1, 3], [2025, 4, 2, 2], [2025, 4, 3, 1], [2025, 4, 4, 4], [2025, 4, 5, 4], [2025, 4, 6, 5], [2025, 4, 7, 1], [2025, 4, 8, 3], [2025, 4, 12, 1], [2025, 4, 16, 2], [2025, 4, 17, 1], [2025, 4, 32, 1], [2025, 4, 33, 2], [2025, 4, 35, 1], [2025, 4, 36, 1], [2025, 4, 41, 1], [2025, 4, 52, 1], [2025, 5, 0, 17], [2025, 5, 1, 4], [2025, 5, 2, 2], [2025, 5, 3, 2], [2025, 5, 4, 8], [2025, 5, 5, 9], [2025, 5, 6, 3], [2025, 5, 7, 6], [2025, 5, 8, 5], [2025, 5, 9, 1], [2025, 5, 10, 1], [2025, 5, 11, 1], [2025, 5, 12, 1], [2025, 5, 15, 1], [2025, 5, 32, 2], [2025, 6, 0, 44], [2025, 6, 1, 10], [2025, 6, 3, 3], [2025, 6, 4, 5], [2025, 6, 5, 15], [2025, 6, 6, 10], [2025, 6, 7, 7], [2025, 6, 8, 3], [2025, 6, 9, 1], [2025, 6, 10, 1], [2025, 6, 11, 1], [2025, 6, 12, 1], [2025, 6, 13, 1], [2025, 6, 15, 2], [2025, 6, 16, 1], [2025, 6, 18, 1], [2025, 6, 21, 2], [2025, 7, 0, 22], [2025, 7, 1, 14], [2025, 7, 2, 2], [2025, 7, 3, 8], [2025, 7, 4, 3], [2025, 7, 5, 6], [2025, 7, 6, 2], [2025, 7, 7, 9], [2025, 7, 8, 5], [2025, 7, 10, 1], [2025, 7, 11, 2], [2025, 7, 14, 1], [2025, 7, 16, 1], [2025, 7, 18, 2], [2025, 7, 19, 1], [2025, 8, 0, 15], [2025, 8, 1, 5], [2025, 8, 2, 3], [2025, 8, 3, 5], [2025, 8, 4, 9], [2025, 8, 5, 17], [2025, 8, 6, 12], [2025, 8, 7, 6], [2025, 8, 8, 2], [2025, 8, 11, 1], [2025, 8, 13, 2], [2025, 8, 14, 2], [2025, 8, 15, 3], [2025, 8, 17, 1], [2025, 8, 18, 1], [2025, 8, 47, 1], [2025, 9, 0, 27], [2025, 9, 1, 3], [2025, 9, 2, 1], [2025, 9, 3, 2], [2025, 9, 4, 2], [2025, 9, 5, 13], [2025, 9, 6, 3], [2025, 9, 9, 2], [2025, 9, 10, 1], [2025, 9, 12, 1], [2025, 9, 13, 1], [2025, 9, 14, 1], [2025, 9, 17, 1], [2025, 9, 19, 1], [2025, 9, 22, 1], [2025, 9, 26, 1], [2025, 9, 32, 1], [2025, 10, 0, 16], [2025, 10, 1, 5], [2025, 10, 2, 3], [2025, 10, 3, 1], [2025, 10, 4, 2], [2025, 10, 5, 5], [2025, 10, 6, 1], [2025, 10, 7, 1], [2025, 10, 8, 1], [2025, 10, 10, 3], [2025, 10, 11, 1], [2025, 10, 14, 2], [2025, 10, 18, 1], [2025, 10, 19, 3], [2025, 10, 21, 2], [2025, 10, 28, 1], [2025, 10, 44, 1], [2025, 10, 46, 1], [2025, 11, 0, 21], [2025, 11, 1, 5], [2025, 11, 2, 2], [2025, 11, 3, 5], [2025, 11, 4, 3], [2025, 11, 5, 9], [2025, 11, 6, 5], [2025, 11, 7, 4], [2025, 11, 8, 1], [2025, 11, 11, 1], [2025, 11, 14, 3], [2025, 11, 15, 1], [2025, 11, 20, 1], [2025, 11, 22, 1], [2025, 11, 24, 1], [2025, 11, 45, 1], [2025, 12, 0, 16], [2025, 12, 1, 2], [2025, 12, 2, 3], [2025, 12, 4, 3], [2025, 12, 5, 4], [2025, 12, 6, 4], [2025, 12, 7, 3], [2025, 12, 8, 1], [2025, 12, 9, 1], [2025, 12, 13, 1], [2025, 12, 15, 1], [2025, 12, 18, 1], [2025, 12, 52, 1], [2026, 1, 0, 18], [2026, 1, 1, 4], [2026, 1, 4, 4], [2026, 1, 5, 3], [2026, 1, 6, 4], [2026, 1, 7, 3], [2026, 1, 8, 5], [2026, 1, 10, 2], [2026, 1, 11, 1], [2026, 1, 13, 2], [2026, 1, 15, 3], [2026, 1, 16, 1], [2026, 1, 17, 1], [2026, 1, 20, 1], [2026, 1, 21, 1], [2026, 1, 27, 1], [2026, 1, 29, 5], [2026, 1, 30, 10], [2026, 1, 31, 9], [2026, 1, 32, 2], [2026, 1, 44, 1], [2026, 2, 0, 11], [2026, 2, 3, 4], [2026, 2, 4, 2], [2026, 2, 5, 4], [2026, 2, 6, 2], [2026, 2, 7, 3], [2026, 2, 8, 2], [2026, 2, 9, 1], [2026, 2, 10, 1], [2026, 2, 16, 2], [2026, 2, 19, 2], [2026, 2, 25, 1], [2026, 3, 0, 6], [2026, 3, 1, 2], [2026, 3, 2, 1], [2026, 3, 4, 1], [2026, 3, 5, 4], [2026, 3, 6, 4], [2026, 3, 8, 2], [2026, 3, 9, 1], [2026, 3, 14, 1], [2026, 3, 19, 1], [2026, 3, 34, 1], [2026, 4, 0, 11], [2026, 4, 1, 3], [2026, 4, 2, 2], [2026, 4, 4, 2], [2026, 4, 5, 4], [2026, 4, 6, 1], [2026, 4, 10, 2], [2026, 4, 14, 1], [2026, 4, 15, 1], [2026, 4, 22, 1], [2026, 5, 0, 5], [2026, 5, 1, 3], [2026, 5, 3, 6], [2026, 5, 4, 8], [2026, 5, 5, 15], [2026, 5, 6, 20], [2026, 5, 7, 25], [2026, 5, 8, 19], [2026, 5, 9, 19], [2026, 5, 10, 14], [2026, 5, 11, 12], [2026, 5, 12, 9], [2026, 5, 13, 17], [2026, 5, 14, 13], [2026, 5, 15, 20], [2026, 5, 16, 16], [2026, 5, 17, 18], [2026, 5, 18, 17], [2026, 5, 19, 13], [2026, 5, 20, 15], [2026, 5, 21, 10], [2026, 5, 22, 8], [2026, 5, 23, 6], [2026, 5, 24, 6], [2026, 5, 25, 3], [2026, 5, 26, 6], [2026, 5, 28, 1], [2026, 5, 29, 1], [2026, 5, 30, 3], [2026, 5, 31, 1], [2026, 5, 32, 1], [2026, 5, 33, 1], [2026, 5, 34, 1], [2026, 5, 35, 2], [2026, 5, 39, 1], [2026, 5, 44, 1], [2026, 5, 51, 1], [2026, 5, 52, 1], [2026, 6, 0, 9], [2026, 6, 2, 2], [2026, 6, 3, 6], [2026, 6, 4, 23], [2026, 6, 5, 21], [2026, 6, 6, 27], [2026, 6, 7, 32], [2026, 6, 8, 23], [2026, 6, 9, 30], [2026, 6, 10, 32], [2026, 6, 11, 19], [2026, 6, 12, 30], [2026, 6, 13, 28], [2026, 6, 14, 18], [2026, 6, 15, 15], [2026, 6, 16, 32], [2026, 6, 17, 17], [2026, 6, 18, 33], [2026, 6, 19, 27], [2026, 6, 20, 24], [2026, 6, 21, 33], [2026, 6, 22, 24], [2026, 6, 23, 15], [2026, 6, 24, 15], [2026, 6, 25, 5], [2026, 6, 26, 8], [2026, 6, 27, 8], [2026, 6, 28, 5], [2026, 6, 29, 4], [2026, 6, 30, 2], [2026, 6, 31, 1], [2026, 6, 33, 1], [2026, 6, 34, 1], [2026, 6, 37, 1], [2026, 7, 0, 4], [2026, 7, 1, 1], [2026, 7, 2, 3], [2026, 7, 3, 21], [2026, 7, 4, 27], [2026, 7, 5, 28], [2026, 7, 6, 30], [2026, 7, 7, 36], [2026, 7, 8, 25], [2026, 7, 9, 25], [2026, 7, 10, 27], [2026, 7, 11, 29], [2026, 7, 12, 22], [2026, 7, 13, 20], [2026, 7, 14, 35], [2026, 7, 15, 18], [2026, 7, 16, 18], [2026, 7, 17, 26], [2026, 7, 18, 28], [2026, 7, 19, 26], [2026, 7, 20, 31], [2026, 7, 21, 33], [2026, 7, 22, 26], [2026, 7, 23, 21], [2026, 7, 24, 20], [2026, 7, 25, 16], [2026, 7, 26, 7], [2026, 7, 27, 6], [2026, 7, 28, 9], [2026, 7, 29, 4], [2026, 7, 30, 3], [2026, 7, 32, 1], [2026, 7, 36, 1], [2026, 7, 40, 1], [2026, 7, 48, 1], [2026, 7, 53, 1], [2026, 8, 0, 4], [2026, 8, 3, 1], [2026, 8, 4, 12], [2026, 8, 5, 9], [2026, 8, 6, 9], [2026, 8, 7, 11], [2026, 8, 8, 16], [2026, 8, 9, 12], [2026, 8, 10, 12], [2026, 8, 11, 10], [2026, 8, 12, 12], [2026, 8, 13, 13], [2026, 8, 14, 15], [2026, 8, 15, 10], [2026, 8, 16, 13], [2026, 8, 17, 13], [2026, 8, 18, 8], [2026, 8, 19, 15], [2026, 8, 20, 13], [2026, 8, 21, 14], [2026, 8, 22, 13], [2026, 8, 23, 4], [2026, 8, 24, 11], [2026, 8, 25, 6], [2026, 8, 26, 3], [2026, 8, 27, 4], [2026, 8, 28, 2], [2026, 8, 29, 2], [2026, 8, 35, 1], [2026, 8, 37, 1], [2026, 8, 47, 1], [2026, 9, 1, 2], [2026, 9, 3, 1], [2026, 9, 4, 7], [2026, 9, 5, 8], [2026, 9, 6, 18], [2026, 9, 7, 10], [2026, 9, 8, 14], [2026, 9, 9, 8], [2026, 9, 10, 13], [2026, 9, 11, 10], [2026, 9, 12, 6], [2026, 9, 13, 11], [2026, 9, 14, 8], [2026, 9, 15, 11], [2026, 9, 16, 14], [2026, 9, 17, 8], [2026, 9, 18, 10], [2026, 9, 19, 12], [2026, 9, 20, 5], [2026, 9, 21, 9], [2026, 9, 22, 12], [2026, 9, 23, 3], [2026, 9, 24, 7], [2026, 9, 25, 6], [2026, 9, 26, 7], [2026, 9, 27, 1], [2026, 9, 28, 4], [2026, 9, 29, 2], [2026, 9, 30, 1], [2026, 9, 34, 2], [2026, 9, 40, 1], [2026, 9, 45, 1], [2026, 9, 51, 1], [2026, 9, 58, 1], [2026, 9, 60, 1]], "buckets": ["até 1 min", "1–10 min", "10–30 min", "30–60 min"], "janela": 60, "ultimaData": "30/09/2026", "ultimoMes": [2026, 9]};
+const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESES_L=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const YEAR_COLORS=['#C4B8B5','#7A6E6C','#8B0C1F','#C8102E'];
+const yColor=y=>YEAR_COLORS[YEAR_COLORS.length-DATA.anos.length+DATA.anos.indexOf(y)]||'#C8102E';
+const nf=n=>n==null?'—':Math.round(n).toLocaleString('pt-BR');
+const pf=(n,d=1)=>n==null||!isFinite(n)?'—':n.toFixed(d).replace('.',',')+'%';
+const ppf=n=>n==null||!isFinite(n)?'—':(n>0?'+':'')+n.toFixed(1).replace('.',',')+' p.p.';
+
+const S={year:'all',prod:'all',midia:'all',metric:'pct',dup:'inc',sec:'geral'};
+const [LY,LM]=DATA.ultimoMes;
+const exists=(y,m)=>y<LY||(y===LY&&m<=LM);
+
+Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.color='#7A6E6C';
+Chart.defaults.plugins.legend.labels.boxWidth=12;
+Chart.defaults.plugins.tooltip.backgroundColor='#1A1210';
+Chart.defaults.plugins.tooltip.padding=10;
+const charts={};
+function draw(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),cfg); }
+const gridY={color:'rgba(26,18,16,0.06)'}, noGrid={display:false};
+
+/* ── agregação ── */
+function filtered(opts={}){
+  return DATA.rows.filter(r=>(opts.ignoreProd||S.prod==='all'||r[2]===+S.prod)&&(S.midia==='all'||r[3]===+S.midia));
+}
+function cube(rows){ // y -> m -> {n,r,d}
+  const c={}; DATA.anos.forEach(y=>{c[y]={};for(let m=1;m<=12;m++)c[y][m]={n:0,r:0,d:0};});
+  rows.forEach(([y,m,,,n,r,d])=>{const o=c[y][m];o.n+=n;o.r+=r;o.d+=d;});
+  return c;
+}
+const ret=o=>S.dup==='exc'?o.r-o.d:o.r;
+const taxa=o=>o.n?ret(o)/o.n*100:null;
+function sum(list){return list.reduce((a,o)=>({n:a.n+o.n,r:a.r+o.r,d:a.d+o.d}),{n:0,r:0,d:0});}
+const yearsSel=()=>S.year==='all'?DATA.anos:[+S.year];
+const metricVal=o=>S.metric==='pct'?taxa(o):ret(o);
+
+/* ── controles ── */
+function initControls(){
+  const yt=document.getElementById('yearToggle');
+  yt.innerHTML=['all',...DATA.anos].map(y=>`<button class="year-btn${y===S.year?' active':''}" data-y="${y}">${y==='all'?'Todos':y}</button>`).join('');
+  yt.onclick=e=>{const b=e.target.closest('button');if(!b)return;S.year=b.dataset.y;yt.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render();};
+  document.getElementById('headerRight').innerHTML=`Dados Sigavi até<br><b>${DATA.ultimaData}</b>`;
+  const fp=document.getElementById('fProd');
+  fp.innerHTML='<option value="all">Todos os produtos</option>'+DATA.produtos.map((p,i)=>`<option value="${i}">${title(p)}</option>`).join('');
+  fp.onchange=()=>{S.prod=fp.value;render();};
+  const fm=document.getElementById('fMidia');
+  fm.innerHTML='<option value="all">Todas as mídias</option>'+DATA.midias.map((p,i)=>`<option value="${i}">${p}</option>`).join('');
+  fm.onchange=()=>{S.midia=fm.value;render();};
+  seg('segMetric','metric');
+  document.getElementById('fClear').onclick=()=>{S.prod='all';S.midia='all';fp.value='all';fm.value='all';render();};
+  document.querySelector('.nav-inner').onclick=e=>{const b=e.target.closest('.nav-btn');if(!b)return;
+    S.sec=b.dataset.s;document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x===b));
+    document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='s-'+S.sec));render();};
+}
+function seg(id,key){const el=document.getElementById(id);el.onclick=e=>{const b=e.target.closest('button');if(!b)return;S[key]=b.dataset.v;el.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render();};}
+function title(s){return s.toLowerCase().replace(/(^|\s|\/)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()).replace(/\bBy\b/,'by').replace(/\bDe\b/g,'de').replace(/\bDas\b/g,'das');}
+function filterLabel(){const p=[];if(S.prod!=='all')p.push(title(DATA.produtos[+S.prod]));if(S.midia!=='all')p.push(DATA.midias[+S.midia]);return p.join(' · ');}
+
+/* ── VISÃO GERAL ── */
+function renderGeral(){
+  const c=cube(filtered());
+  const ys=yearsSel();
+  const yLabel=S.year==='all'?`${DATA.anos[0]}–${DATA.anos[DATA.anos.length-1]}`:S.year;
+  document.getElementById('tagGeral').textContent=[yLabel,filterLabel()].filter(Boolean).join(' · ');
+  const tot=sum(ys.flatMap(y=>Object.values(c[y])));
+  // comparação mesmos meses do ano anterior
+  let cmp='';
+  if(S.year!=='all'&&DATA.anos.includes(+S.year-1)){
+    const y=+S.year, lastM=y===LY?LM:12;
+    const cur=sum([...Array(lastM)].map((_,i)=>c[y][i+1])), prev=sum([...Array(lastM)].map((_,i)=>c[y-1][i+1]));
+    const d=taxa(cur)-taxa(prev);
+    cmp=`<span class="${d>0?'delta-up':'delta-down'}">${ppf(d)}</span> vs ${y-1}${lastM<12?` (jan–${MESES[lastM-1].toLowerCase()})`:''}`;
+  }
+  // destaque: mesmo período em todos os anos
+  const hm=LM, per=hm<12?`jan–${MESES[hm-1].toLowerCase()}`:'ano completo';
+  const ytd=y=>sum([...Array(hm)].map((_,i)=>c[y][i+1]));
+  const base=S.dup==='exc'?'sem duplicatas suspeitas':'números do Sigavi';
+  document.getElementById('hlGeral').innerHTML=`<div class="hl-top"><div class="hl-title">Taxa de retorno — mesmo período (${per})</div><div class="hl-sub">${base}${filterLabel()?' · '+filterLabel():''}</div></div>
+    <div class="hl-grid">${DATA.anos.map((y,i)=>{const o=ytd(y),p=i?ytd(DATA.anos[i-1]):null,d=p&&p.n?taxa(o)-taxa(p):null;
+      return `<div class="hl-year${y===LY?' cur':''}"><div class="hl-y">${y}</div><div class="hl-v">${pf(taxa(o))}</div>
+        <div class="hl-d">${nf(ret(o))} retornos / ${nf(o.n)} novos${d!=null?` · <b>${ppf(d)}</b> vs ${DATA.anos[i-1]}`:''}</div></div>`;}).join('')}</div>
+    <div class="hl-note">${S.dup==='exc'?'Visão sem duplicatas: retornos registrados até 60 min após o próprio Novo Lead foram descontados em todos os anos.':'Números conforme registrados no Sigavi (coluna Tipo). Entre mai e set/2026 parte dos retornos veio de uma falha de integração do Meta — detalhes na aba <b>Qualidade dos dados</b>.'}</div>`;
+  document.getElementById('kpiGeral').innerHTML=[
+    ['Novos Leads',nf(tot.n),'Entradas tipo "Novo Lead"',''],
+    ['Retornos',nf(ret(tot)),S.dup==='exc'?'Sem duplicatas suspeitas':'Entradas tipo "Retorno"','red'],
+    ['Taxa de Retorno',pf(taxa(tot)),cmp||'Retornos ÷ Novos Leads','red'],
+    ['Total de Entradas',nf(tot.n+ret(tot)),'Novos + Retornos',''],
+  ].map(([l,v,s,cls])=>`<div class="kpi-card"><div class="kpi-label">${l}</div><div class="kpi-value ${cls}">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  // evolução: uma linha por ano
+  const isPct=S.metric==='pct';
+  document.getElementById('t_evo').textContent=isPct?'Taxa de retorno mês a mês — comparativo entre anos':'Retornos (bruto) mês a mês — comparativo entre anos';
+  document.getElementById('st_evo').textContent=(isPct?'Retornos ÷ Novos Leads, em %':'Quantidade de entradas tipo "Retorno"')+(S.dup==='exc'?' · duplicatas removidas':'')+' · use os botões do topo para alternar % / bruto';
+  draw('c_evo',{type:'line',data:{labels:MESES,datasets:DATA.anos.map(y=>({
+      label:String(y),data:MESES.map((_,i)=>exists(y,i+1)?metricVal(c[y][i+1]):null),
+      borderColor:yColor(y),backgroundColor:yColor(y),borderWidth:y===LY?3:2,pointRadius:4,pointHoverRadius:6,tension:.3,spanGaps:false,
+      hidden:S.year!=='all'&&+S.year!==y&&+S.year-1!==y}))},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:ctx=>{const o=c[+ctx.dataset.label][ctx.dataIndex+1];return ` ${ctx.dataset.label}: ${isPct?pf(ctx.raw):nf(ctx.raw)}  (${nf(ret(o))} ret. / ${nf(o.n)} novos)`;}}}},
+      scales:{y:{beginAtZero:true,grid:gridY,ticks:{callback:v=>isPct?v+'%':nf(v)}},x:{grid:noGrid}}}});
+
+  // acumulado no ano
+  const acum=y=>{let n=0,r=0;return MESES.map((_,i)=>{if(!exists(y,i+1))return null;const o=c[y][i+1];n+=o.n;r+=ret(o);return {n,r};});};
+  const AC={};DATA.anos.forEach(y=>AC[y]=acum(y));
+  document.getElementById('t_acum').textContent=isPct?'Taxa de retorno acumulada no ano':'Retornos acumulados no ano (bruto)';
+  document.getElementById('st_acum').textContent=(isPct?'Soma dos retornos ÷ soma dos novos leads de janeiro até o mês':'Soma dos retornos de janeiro até o mês')+(S.dup==='exc'?' · duplicatas removidas':'');
+  draw('c_acum',{type:'line',data:{labels:MESES,datasets:DATA.anos.map(y=>({
+      label:String(y),data:AC[y].map(o=>o==null?null:isPct?(o.n?o.r/o.n*100:null):o.r),
+      borderColor:yColor(y),backgroundColor:yColor(y),borderWidth:y===LY?3:2,pointRadius:3,pointHoverRadius:6,tension:.25,
+      hidden:S.year!=='all'&&+S.year!==y&&+S.year-1!==y}))},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:ctx=>{const o=AC[+ctx.dataset.label][ctx.dataIndex];return ` ${ctx.dataset.label}: ${isPct?pf(ctx.raw):nf(ctx.raw)}  (${nf(o.r)} ret. / ${nf(o.n)} novos acum.)`;}}}},
+      scales:{y:{beginAtZero:true,grid:gridY,ticks:{callback:v=>isPct?v+'%':nf(v)}},x:{grid:noGrid}}}});
+
+  // linha do tempo
+  const tl=[];ys.forEach(y=>{for(let m=1;m<=12;m++)if(exists(y,m))tl.push([y,m]);});
+  draw('c_timeline',{type:'bar',data:{labels:tl.map(([y,m])=>`${MESES[m-1]}/${String(y).slice(2)}`),datasets:[
+      {type:'line',label:'Taxa de retorno',data:tl.map(([y,m])=>taxa(c[y][m])),yAxisID:'y1',borderColor:'#1A1210',backgroundColor:'#1A1210',borderWidth:2,pointRadius:3,tension:.3,order:0},
+      {label:'Novos Leads',data:tl.map(([y,m])=>c[y][m].n),backgroundColor:'rgba(196,184,181,0.75)',borderRadius:4,order:2},
+      {label:'Retornos',data:tl.map(([y,m])=>ret(c[y][m])),backgroundColor:'#C8102E',borderRadius:4,order:1}]},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.yAxisID==='y1'?` Taxa: ${pf(ctx.raw)}`:` ${ctx.dataset.label}: ${nf(ctx.raw)}`}}},
+      scales:{y:{beginAtZero:true,grid:gridY,ticks:{callback:v=>nf(v)}},y1:{position:'right',beginAtZero:true,grid:noGrid,ticks:{callback:v=>v+'%'}},x:{grid:noGrid}}}});
+
+  // tabela mês a mês
+  const anos=DATA.anos;
+  let h=`<thead><tr class="grp"><th class="th-name"></th>${anos.map(y=>`<th colspan="5" class="grp-start">${y}</th>`).join('')}</tr>
+    <tr><th class="th-name">Mês</th>${anos.map(()=>`<th class="grp-start">Novos</th><th>Retornos</th><th>Taxa</th><th>Ret. acum.</th><th>Taxa acum.</th>`).join('')}</tr></thead><tbody>`;
+  for(let m=1;m<=12;m++){
+    h+=`<tr><td class="td-name">${MESES_L[m-1][0].toUpperCase()+MESES_L[m-1].slice(1)}</td>`+anos.map(y=>{
+      if(!exists(y,m))return `<td class="grp-start muted">—</td>`+'<td class="muted">—</td>'.repeat(4);
+      const o=c[y][m],a=AC[y][m-1];return `<td class="grp-start">${nf(o.n)}</td><td>${nf(ret(o))}</td><td class="taxa">${pf(taxa(o))}</td><td>${nf(a.r)}</td><td class="taxa">${pf(a.n?a.r/a.n*100:null)}</td>`;}).join('')+'</tr>';
+  }
+  h+=`<tr class="tr-geral"><td class="td-name">Total</td>`+anos.map(y=>{const o=sum(Object.values(c[y]));return `<td class="grp-start">${nf(o.n)}</td><td>${nf(ret(o))}</td><td>${pf(taxa(o))}</td><td>${nf(ret(o))}</td><td>${pf(taxa(o))}</td>`;}).join('')+'</tr></tbody>';
+  document.getElementById('tblMes').innerHTML=h;
+}
+
+/* ── POR PRODUTO ── */
+function renderProduto(){
+  const rows=filtered({ignoreProd:true});
+  const ys=yearsSel(), anos=DATA.anos, isPct=S.metric==='pct';
+  const P={}; // p -> y -> {n,r,d}
+  rows.forEach(([y,m,p,,n,r,d])=>{P[p]=P[p]||{};const o=P[p][y]=P[p][y]||{n:0,r:0,d:0};o.n+=n;o.r+=r;o.d+=d;});
+  const agg=p=>sum(ys.map(y=>(P[p]||{})[y]||{n:0,r:0,d:0}));
+  const yLabel=S.year==='all'?'todos os anos':S.year;
+  document.getElementById('tagProd').textContent=[S.year==='all'?'Todos os anos':S.year,S.midia!=='all'?DATA.midias[+S.midia]:''].filter(Boolean).join(' · ');
+  document.getElementById('t_prod').textContent=(isPct?'Taxa de retorno por produto':'Retornos (bruto) por produto')+` — ${yLabel}`;
+
+  const FORA=['INSTITUCIONAL','(sem produto)'];
+  const list=Object.keys(P).map(Number).filter(p=>agg(p).n>=30&&!FORA.includes(DATA.produtos[p])).sort((a,b)=>metricVal(agg(b))-metricVal(agg(a)));
+  const totAll=sum(Object.keys(P).map(p=>agg(+p)));AVG=isPct?taxa(totAll):null;
+  document.getElementById('prodWrap').style.height=Math.max(220,list.length*30+50)+'px';
+  draw('c_prod',{type:'bar',data:{labels:list.map(p=>title(DATA.produtos[p])),datasets:[{label:isPct?'Taxa':'Retornos',
+      data:list.map(p=>metricVal(agg(p))),backgroundColor:list.map(p=>S.prod==='all'||+S.prod===p?'#C8102E':'rgba(200,16,46,0.25)'),borderRadius:4,barThickness:18}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,onClick:(e,els)=>{if(els.length)setProd(list[els[0].index]);},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const o=agg(list[ctx.dataIndex]);return ` ${pf(taxa(o))} · ${nf(ret(o))} retornos / ${nf(o.n)} novos`;}}}},
+      scales:{x:{beginAtZero:true,grid:gridY,ticks:{callback:v=>isPct?v+'%':nf(v)}},y:{grid:noGrid,ticks:{color:'#1A1210',font:{size:11.5}}}}},
+    plugins:[avgLine]});
+
+  // tabela produto x ano
+  const all=Object.keys(P).map(Number).sort((a,b)=>agg(b).n-agg(a).n||sum(anos.map(y=>P[b][y]||{n:0,r:0,d:0})).n-sum(anos.map(y=>P[a][y]||{n:0,r:0,d:0})).n);
+  const [ya,yb]=anos.slice(-2);
+  document.getElementById('hintProdTbl').textContent=anos.length>1?`Δ = variação da taxa ${yb} vs ${ya}${LM<12?` (${ya} completo, ${yb} até ${MESES[LM-1].toLowerCase()})`:''}`:'';
+  let h=`<thead><tr class="grp"><th class="th-name"></th>${anos.map(y=>`<th colspan="3" class="grp-start">${y}</th>`).join('')}${anos.length>1?'<th class="grp-start"></th>':''}</tr>
+    <tr><th class="th-name">Produto</th>${anos.map(()=>`<th class="grp-start">Novos</th><th>Retornos</th><th>Taxa</th>`).join('')}${anos.length>1?'<th class="grp-start">Δ Taxa</th>':''}</tr></thead><tbody>`;
+  const cell=o=>!o||!o.n&&!o.r?`<td class="grp-start muted">—</td><td class="muted">—</td><td class="muted">—</td>`:`<td class="grp-start">${nf(o.n)}</td><td>${nf(ret(o))}</td><td class="taxa">${pf(taxa(o))}</td>`;
+  const delta=(a,b)=>{if(!a||!b||a.n<30||b.n<30)return '<td class="grp-start muted">—</td>';const d=taxa(b)-taxa(a);return `<td class="grp-start ${d>0?'delta-up':'delta-down'}">${ppf(d)}</td>`;};
+  all.forEach(p=>{h+=`<tr class="clickable${+S.prod===p?' sel':''}" data-p="${p}"><td class="td-name">${title(DATA.produtos[p])}</td>${anos.map(y=>cell(P[p][y])).join('')}${anos.length>1?delta(P[p][ya],P[p][yb]):''}</tr>`;});
+  const T=y=>sum(all.map(p=>P[p][y]||{n:0,r:0,d:0}));
+  h+=`<tr class="tr-geral"><td class="td-name">Total</td>${anos.map(y=>cell(T(y))).join('')}${anos.length>1?delta(T(ya),T(yb)):''}</tr></tbody>`;
+  const tb=document.getElementById('tblProd');tb.innerHTML=h;
+  tb.querySelectorAll('tr.clickable').forEach(tr=>tr.onclick=()=>setProd(+tr.dataset.p));
+
+  // mapa mensal produto x mês (ano selecionado ou último)
+  const yH=S.year==='all'?LY:+S.year, lastM=yH===LY?LM:12;
+  document.getElementById('t_heat').textContent=`Mapa mensal por produto — ${yH}`;
+  document.getElementById('hintHeat').textContent=(isPct?'Taxa de retorno':'Retornos (bruto)')+(S.year==='all'?` · mostrando ${LY}; escolha o ano no topo`:'')+' · quanto mais escuro, maior';
+  const M={};rows.filter(r=>r[0]===yH).forEach(([y,m,p,,n,r,d])=>{M[p]=M[p]||{};const o=M[p][m]=M[p][m]||{n:0,r:0,d:0};o.n+=n;o.r+=r;o.d+=d;});
+  const hp=Object.keys(M).map(Number).sort((a,b)=>sum(Object.values(M[b])).n-sum(Object.values(M[a])).n);
+  let mx=0;hp.forEach(p=>{for(let m=1;m<=lastM;m++){const o=M[p][m];if(o&&o.n>=10)mx=Math.max(mx,metricVal(o)||0);}});
+  let hh=`<thead><tr><th class="th-name">Produto</th>${MESES.slice(0,lastM).map(m=>`<th>${m}</th>`).join('')}<th class="grp-start">Ano</th></tr></thead><tbody>`;
+  hp.forEach(p=>{
+    hh+=`<tr class="clickable" data-p="${p}"><td class="td-name">${title(DATA.produtos[p])}</td>`;
+    for(let m=1;m<=lastM;m++){const o=M[p][m];
+      if(!o||!o.n&&!o.r){hh+='<td class="cell muted">—</td>';continue;}
+      const v=metricVal(o), a=o.n<10?0:Math.min(1,(v||0)/(mx||1));
+      hh+=`<td class="cell" title="${nf(ret(o))} retornos / ${nf(o.n)} novos" style="background:rgba(200,16,46,${(a*0.85).toFixed(2)});color:${a>0.5?'white':'var(--text-light)'}">${isPct?pf(v,0):nf(v)}</td>`;}
+    const t=sum(Object.values(M[p]));hh+=`<td class="grp-start taxa">${isPct?pf(taxa(t)):nf(ret(t))}</td></tr>`;});
+  const ht=document.getElementById('tblHeat');ht.innerHTML=hh+'</tbody>';
+  ht.querySelectorAll('tr.clickable').forEach(tr=>tr.onclick=()=>setProd(+tr.dataset.p));
+}
+let AVG=null;
+const avgLine={id:'avgLine',afterDatasetsDraw(ch){const v=AVG;if(v==null)return;
+  const x=ch.scales.x.getPixelForValue(v),{top,bottom}=ch.chartArea,ctx=ch.ctx;ctx.save();ctx.strokeStyle='#1A1210';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle='#1A1210';ctx.font="600 11px 'DM Sans'";ctx.textAlign='left';ctx.fillText('média geral '+pf(v),x+5,top+10);ctx.restore();}};
+function setProd(p){S.prod=String(p);document.getElementById('fProd').value=S.prod;render();}
+
+/* ── DUPLICATAS ── */
+function renderDup(){
+  const c=cube(filtered());
+  const tl=[];DATA.anos.forEach(y=>{for(let m=1;m<=12;m++)if(exists(y,m))tl.push([y,m]);});
+  const labels=tl.map(([y,m])=>`${MESES[m-1]}/${String(y).slice(2)}`);
+
+  // picos: meses com duplicatas > 2× a mediana (mín. 80). O período em foco é a última sequência contínua de picos.
+  const allC=cube(DATA.rows);
+  function medAll(){const v=tl.map(([y,m])=>allC[y][m].d).sort((a,b)=>a-b);return v[Math.floor(v.length/2)]||0;}
+  const lim=Math.max(2*medAll(),80), spike=tl.filter(([y,m])=>allC[y][m].d>lim);
+  const runs=[];spike.forEach(ym=>{const r=runs[runs.length-1],k=ym[0]*12+ym[1];if(r&&r.k===k-1){r.ms.push(ym);r.k=k;}else runs.push({k,ms:[ym]});});
+  const anom=runs.length?runs[runs.length-1].ms:[], outros=runs.slice(0,-1).flatMap(r=>r.ms);
+  const isSpike=(y,m)=>spike.some(([a,b])=>a===y&&b===m);
+  const base=tl.filter(([y,m])=>!isSpike(y,m));
+  const A=sum(anom.map(([y,m])=>allC[y][m])), B=sum(base.map(([y,m])=>allC[y][m]));
+  const avgB=base.length?B.d/base.length:0, avgA=anom.length?A.d/anom.length:0;
+  const ml=([y,m])=>`${MESES[m-1].toLowerCase()}/${y}`;
+  const per=anom.length?(anom.length>1?`${ml(anom[0])} a ${ml(anom[anom.length-1])}`:ml(anom[0])):'';
+  const outrosTxt=outros.length?`<br><br>Outros meses com pico (padrão diferente, quase todo <b>Site → Site</b> em 1–10 min, típico de formulário enviado duas vezes): ${outros.map(o=>`<b>${ml(o)}</b> (${nf(allC[o[0]][o[1]].d)})`).join(', ')}.`:'';
+  // assinatura dominante no período anômalo
+  const sigA={};DATA.dupSig.forEach(([y,m,s,n])=>{if(anom.some(([a,b])=>a===y&&b===m))sigA[s]=(sigA[s]||0)+n;});
+  const topSig=Object.entries(sigA).sort((a,b)=>b[1]-a[1]).slice(0,2);
+  const bucA={};DATA.dupBucket.forEach(([y,m,b,n])=>{if(anom.some(([a,bb])=>a===y&&bb===m))bucA[b]=(bucA[b]||0)+n;});
+  const fast=(bucA['10–30 min']||0)+(bucA['1–10 min']||0);
+
+  document.getElementById('dupCallout').innerHTML=`<h4>O que foi encontrado</h4>
+    Considerei <b>duplicata suspeita</b> todo "Retorno" que entrou na <b>mesma ficha (Fac)</b>, para o <b>mesmo empreendimento</b> (ou com uma das entradas sem produto), até <b>${DATA.janela} minutos</b> depois da entrada anterior.
+    ${anom.length?`De <b>${per}</b> isso explodiu: <b>${nf(A.d)}</b> duplicatas (média de <b>${nf(avgA)}/mês</b>, contra <b>${nf(avgB)}/mês</b> nos meses sem pico) — <b>${pf(A.d/A.r*100,0)}</b> de todos os retornos do período.
+    O padrão não é de segundos: ${pf(fast/A.d*100,0)} chegam entre <b>1 e 30 minutos</b> depois do Novo Lead. A combinação dominante é ${topSig.map(([s,n])=>`<b>${s}</b> (${nf(n)})`).join(' e ')} — o mesmo lead do Meta entra primeiro como Novo Lead e minutos depois é reenviado como "Retorno" com outra mídia.
+    Sem as duplicatas, a taxa de retorno do período cai de <b>${pf(A.r/A.n*100)}</b> para <b>${pf((A.r-A.d)/A.n*100)}</b>.`:''}${outrosTxt}`;
+
+  const ys=yearsSel(), tot=sum(ys.flatMap(y=>Object.values(c[y])));
+  document.getElementById('kpiDup').innerHTML=[
+    ['Duplicatas suspeitas',nf(tot.d),S.year==='all'?'Todos os anos':S.year,'red'],
+    ['% dos retornos',pf(tot.r?tot.d/tot.r*100:null),'Duplicatas ÷ retornos',''],
+    ['Retornos reais',nf(tot.r-tot.d),'Retornos sem duplicatas',''],
+    ['Taxa com dup.',pf(tot.n?tot.r/tot.n*100:null),'Como está no Sigavi',''],
+    ['Taxa sem dup.',pf(tot.n?(tot.r-tot.d)/tot.n*100:null),'Se remover','red'],
+  ].map(([l,v,s,cls])=>`<div class="kpi-card"><div class="kpi-label">${l}</div><div class="kpi-value ${cls}">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+
+  draw('c_dupStack',{type:'bar',data:{labels,datasets:[
+      {label:'Retornos reais',data:tl.map(([y,m])=>c[y][m].r-c[y][m].d),backgroundColor:'#7A6E6C',borderRadius:2,stack:'s'},
+      {label:'Duplicatas suspeitas',data:tl.map(([y,m])=>c[y][m].d),backgroundColor:'#C8102E',borderRadius:2,stack:'s'}]},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{footer:items=>{const [y,m]=tl[items[0].dataIndex],o=c[y][m];return `Total retornos: ${nf(o.r)} · ${pf(o.r?o.d/o.r*100:null,0)} duplicatas`;}}}},
+      scales:{x:{stacked:true,grid:noGrid},y:{stacked:true,beginAtZero:true,grid:gridY}}}});
+
+  draw('c_dupTaxa',{type:'line',data:{labels,datasets:[
+      {label:'Com duplicatas',data:tl.map(([y,m])=>c[y][m].n?c[y][m].r/c[y][m].n*100:null),borderColor:'#C8102E',backgroundColor:'#C8102E',borderWidth:2,pointRadius:2,tension:.3},
+      {label:'Sem duplicatas',data:tl.map(([y,m])=>c[y][m].n?(c[y][m].r-c[y][m].d)/c[y][m].n*100:null),borderColor:'#1A1210',backgroundColor:'#1A1210',borderDash:[5,4],borderWidth:2,pointRadius:2,tension:.3}]},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${pf(ctx.raw)}`}}},
+      scales:{y:{beginAtZero:true,grid:gridY,ticks:{callback:v=>v+'%'}},x:{grid:noGrid,ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}}}}});
+
+  // histograma de minutos: período anômalo x demais
+  const inA=(y,m)=>anom.some(([a,b])=>a===y&&b===m);
+  const hA=Array(61).fill(0),hB=Array(61).fill(0);
+  DATA.dupHist.forEach(([y,m,x,n])=>{if(inA(y,m))hA[x]+=n;else if(!isSpike(y,m))hB[x]+=n;});
+  document.getElementById('st_hist').textContent=`Minutos entre a entrada anterior e o "Retorno" · ${anom.length?per+' x meses sem pico (média por mês)':'todos os meses'}`;
+  draw('c_dupHist',{type:'bar',data:{labels:[...Array(61).keys()].map(i=>i+''),datasets:[
+      {label:anom.length?per:'Período',data:hA.map(v=>anom.length?v/anom.length:v),backgroundColor:'#C8102E',barPercentage:1,categoryPercentage:.9},
+      {label:'Meses sem pico',data:hB.map(v=>base.length?v/base.length:v),backgroundColor:'#C4B8B5',barPercentage:1,categoryPercentage:.9}]},
+    options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{tooltip:{callbacks:{title:it=>`${it[0].label} min`,label:ctx=>` ${ctx.dataset.label}: ${ctx.raw.toFixed(1).replace('.',',')} por mês`}}},
+      scales:{x:{grid:noGrid,title:{display:true,text:'minutos'},ticks:{maxRotation:0,callback:(v,i)=>i%5===0?i:''}},y:{beginAtZero:true,grid:gridY}}}});
+
+  // tabela por mês
+  const B_=DATA.buckets, bk={};DATA.dupBucket.forEach(([y,m,b,n])=>{bk[y+'-'+m]=bk[y+'-'+m]||{};bk[y+'-'+m][b]=n;});
+  let h=`<thead><tr><th class="th-name">Mês</th><th>Novos</th><th>Retornos</th><th>Duplicatas</th><th>% dup.</th><th class="grp-start">Taxa com</th><th>Taxa sem</th>${B_.map((b,i)=>`<th class="${i?'':'grp-start'}">${b}</th>`).join('')}</tr></thead><tbody>`;
+  tl.filter(([y])=>S.year==='all'||y===+S.year).forEach(([y,m])=>{const o=c[y][m],b=bk[y+"-"+m]||{},hot=isSpike(y,m);
+    h+=`<tr${hot?' class="sel"':''}><td class="td-name">${MESES[m-1]}/${y}</td><td>${nf(o.n)}</td><td>${nf(o.r)}</td><td class="taxa">${nf(o.d)}</td><td>${pf(o.r?o.d/o.r*100:null,0)}</td>
+      <td class="grp-start">${pf(o.n?o.r/o.n*100:null)}</td><td>${pf(o.n?(o.r-o.d)/o.n*100:null)}</td>${B_.map((x,i)=>`<td class="${i?'':'grp-start'}">${nf(b[x]||0)}</td>`).join('')}</tr>`;});
+  document.getElementById('tblDup').innerHTML=h+'</tbody>';
+
+  // assinaturas
+  const sg={};DATA.dupSig.forEach(([y,m,s,n])=>{if(S.year!=='all'&&y!==+S.year)return;const k=inA(y,m)?'a':'b';sg[s]=sg[s]||{a:0,b:0};sg[s][k]+=n;});
+  const top=Object.entries(sg).sort((x,y)=>(y[1].a+y[1].b)-(x[1].a+x[1].b)).slice(0,10), mxS=Math.max(...top.map(([,v])=>v.a+v.b),1);
+  document.getElementById('tblSig').innerHTML=`<thead><tr><th class="th-name">1ª entrada → Retorno</th><th>${anom.length?per:'Período'}</th><th>Demais meses</th><th>Total</th></tr></thead><tbody>`+
+    top.map(([s,v])=>`<tr><td class="td-name">${s}</td><td class="taxa">${nf(v.a)}</td><td>${nf(v.b)}</td><td>${nf(v.a+v.b)}<span class="bar-in" style="width:${Math.round((v.a+v.b)/mxS*80)}px"></span></td></tr>`).join('')+'</tbody>';
+}
+
+function render(){
+  document.getElementById('fClear').style.display=S.prod!=='all'||S.midia!=='all'?'inline':'none';
+  if(S.sec==='geral')renderGeral();else if(S.sec==='produto')renderProduto();else renderDup();
+  document.getElementById('foot').innerHTML=`Fonte: exportação Sigavi (coluna "Tipo": Novo Lead / Retorno), ${DATA.anos.join(', ')} · dados até ${DATA.ultimaData}. Excluídas entradas de teste ("teste sigavi").
+    Taxa de retorno = Retornos ÷ Novos Leads. Duplicata suspeita = Retorno na mesma ficha e mesmo empreendimento (ou sem produto) até ${DATA.janela} min após a entrada anterior.`;
+}
+initControls();render();
+</script>
+</body>
+</html>
