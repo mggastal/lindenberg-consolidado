@@ -1292,31 +1292,61 @@ function renderComparativo() {
   else if (per === 'trimestral') buckets = {labels:['T1','T2','T3','T4'], ranges:[[0,2],[3,5],[6,8],[9,11]]};
   else if (per === 'semestral') buckets = {labels:['S1','S2'], ranges:[[0,5],[6,11]]};
   else buckets = {labels:['jan–'+upTo+' (mesmo período)','Ano completo'], ranges:[[0,fullIdx],[0,11]]};
-  var datasets = vis.map(function(y){
-    var flags = [], data = buckets.ranges.map(function(rg){
-      var from = rg[0], to = rg[1], isPart = false;
+  // projeção: só para métricas de volume (somáveis) e só no ano corrente com mês parcial
+  var volOn = !!(CMP_ADD[k] && P && pIdx >= 0 && vis.indexOf(curY) >= 0), avgM = null, remFrac = 0;
+  if (volOn) {
+    var cnt = 0, tot = 0;
+    for (var ii = 0; ii <= fullIdx; ii++) { var cc = cell[curY][ii]; if (cc) { cnt++; tot += cc[k]; } }
+    avgM = cnt ? tot / cnt : null;
+    remFrac = (P.dias - P.dia) / P.dias;
+    if (avgM === null) volOn = false;
+  }
+  function hexA(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')'; }
+  var plabels = buckets.labels.map(function(l, bi){
+    var rg = buckets.ranges[bi], has = pIdx >= 0 && vis.indexOf(curY) >= 0 && pIdx >= rg[0] && pIdx <= rg[1];
+    if (per === 'anual') return (volOn && bi === 1) ? l+'*' : l;
+    return has ? l+'*' : l;
+  });
+  var nBars = vis.length * buckets.labels.length;
+  var dense = nBars > 15;   // muitas barras: rótulos na vertical, para caber todos os anos
+  var datasets = [];
+  vis.forEach(function(y){
+    var flags = [], extras = [], data = buckets.ranges.map(function(rg, bi){
+      var from = rg[0], to = rg[1], isPart = false, extra = 0;
       if (per === 'anual') {
-        if (y === curY && to > fullIdx && rg[1] === 11) { flags.push(false); return null; }
+        if (y === curY && bi === 1) {
+          if (!volOn) { flags.push(false); extras.push(0); return null; }
+          to = lastIdx; isPart = true; extra = avgM * (remFrac + 11 - pIdx);
+        }
       } else if (y === curY) {
-        if (from > lastIdx) { flags.push(false); return null; }
+        if (from > lastIdx) { flags.push(false); extras.push(0); return null; }
         if (to > lastIdx || (pIdx >= from && pIdx <= to)) isPart = true;
         to = Math.min(to, lastIdx);
+        if (volOn && pIdx >= from && pIdx <= rg[1]) {
+          if (per === 'mensal') { var pv = metricVal(sum(y, from, to), k) || 0; extra = pv / P.dia * P.dias - pv; }
+          else extra = avgM * (remFrac + (rg[1] - pIdx));
+        }
       }
-      flags.push(isPart && per !== 'anual');
+      flags.push(isPart && (per !== 'anual' || bi === 1));
+      extras.push(extra > 0 ? extra : 0);
       return metricVal(sum(y, from, to), k);
     });
-    var col = cmpColor(y, YEARS);
-    return {label:String(y), data:data, backgroundColor: flags.some(Boolean) ? flags.map(function(f){return f?hatchPattern(col):col;}) : col,
-      borderColor:col, borderWidth: flags.some(Boolean) ? 0 : 0, borderRadius:4, _flags:flags};
+    var col = cmpColor(y, YEARS), lc = col === '#BDB1AD' ? '#7A6E6C' : col, st = 'y'+y;
+    var hasProj = extras.some(function(e){return e > 0;});
+    datasets.push({label:String(y), data:data, backgroundColor:col, borderColor:col, borderWidth:0, borderRadius:4, stack:st, _flags:flags,
+      datalabels:{display:function(c){ return c.dataset.data[c.dataIndex] > 0 && !(extras[c.dataIndex] > 0); }, anchor:'end', align:'end', offset:dense?2:1,
+        rotation:dense?-90:0, color:lc, font:{size:dense?8.5:10, weight:'700'}, clamp:true, formatter:function(v){ return cmpFmt(v,k); }}});
+    if (hasProj) datasets.push({label:y+' · projeção', _proj:true, _year:y, _real:data, data:extras.map(function(e){return e > 0 ? e : null;}),
+      backgroundColor:hexA(col, 0.22), borderColor:col, borderWidth:1.2, borderDash:[4,3], borderRadius:4, stack:st,
+      datalabels:{display:function(c){ return extras[c.dataIndex] > 0; }, anchor:'end', align:'end', offset:dense?2:1, rotation:dense?-90:0,
+        color:lc, font:{size:dense?8.5:10, weight:'700'}, clamp:true,
+        formatter:function(v, c){ return '≈ '+cmpFmt((data[c.dataIndex]||0)+v, k); }}});
   });
-  var nBars = datasets.length * buckets.labels.length;
-  var dense = nBars > 15;   // muitas barras: rótulos na vertical, para caber todos os anos
-  datasets.forEach(function(ds, i){
-    ds.datalabels = {display:function(c){ return c.dataset.data[c.dataIndex]>0; }, anchor:'end', align:'end', offset:dense?2:1,
-      rotation: dense ? -90 : 0,
-      color: cmpColor(vis[i], YEARS)==='#BDB1AD' ? '#7A6E6C' : cmpColor(vis[i], YEARS), font:{size:dense?8.5:10,weight:'700'}, clamp:true,
-      formatter:function(v){ return cmpFmt(v,k); }};
-  });
+  var projNote = volOn
+    ? ' · * em andamento · área clara tracejada = projeção ('+(per==='mensal'
+        ? 'mês corrente pelo ritmo diário, '+P.dia+' de '+P.dias+' dias'
+        : 'realizado + média mensal dos meses fechados de '+curY+', '+cmpFmt(avgM,k,true)+'/mês')+')'
+    : (pIdx >= 0 && per !== 'anual' ? ' · * em andamento (parcial) · razões não são projetadas' : '');
 
   // ----- tabela de eficiência (mesmo período)
   var effKeys = ['cpl','cpv','cpvenda','lpv','lpvenda','bvgv','conv_lv','conv_vv','conv_lvd'];
@@ -1359,7 +1389,7 @@ function renderComparativo() {
   var scopeTxt = cmpState.prod === 'Geral' ? 'Consolidado' : cmpState.prod;
   host.innerHTML =
     '<div class="section-header"><div class="section-title">Comparativo entre anos <span class="tag">'+scopeTxt+'</span></div></div>'
-    +'<p class="cmp-intro">Cards, tabelas e o modo Anual comparam o <b>mesmo período (jan–'+upTo+')</b> em todos os anos'+(pIdx>=0?' — o mês parcial de '+MES[pIdx]+' fica de fora':'')+'. Esta aba não responde aos filtros do Consolidado.</p>'
+    +'<p class="cmp-intro">Cards, tabelas e o modo Anual comparam o <b>mesmo período (jan–'+upTo+')</b> em todos os anos'+(pIdx>=0?' — o mês parcial de '+MES[pIdx]+' fica de fora. <b>O gráfico principal</b> mostra o mês parcial e, nas métricas de volume, a projeção':'')+'. Esta aba não responde aos filtros do Consolidado.</p>'
     +'<div class="cmp-controls">'
       +'<div class="cmp-ctl"><span class="cmp-ctl-label">Anos</span><div class="cmp-years">'+yearChips+'</div></div>'
       +'<div class="cmp-ctl"><span class="cmp-ctl-label">Período</span><div class="cmp-seg">'+perBtns+'</div></div>'
@@ -1367,7 +1397,7 @@ function renderComparativo() {
     +'</div>'
     +'<div class="cmp-cards">'+cards+'</div>'
     +'<div class="charts-grid" style="grid-template-columns:1fr;"><div class="chart-card"><div class="chart-title">'+M.label+(per==='anual'?' — por ano':' — '+per)+'</div>'
-    +'<div class="chart-subtitle">'+vis.join(' · ')+(per!=='anual'?' · último período do ano corrente em andamento':'')+'</div><div class="chart-wrap" style="height:'+(nBars>15?400:340)+'px"><canvas id="cmp_chart"></canvas></div></div></div>'
+    +'<div class="chart-subtitle">'+vis.join(' · ')+projNote+'</div><div class="chart-wrap" style="height:'+(nBars>15?400:340)+'px"><canvas id="cmp_chart"></canvas></div></div></div>'
     +'<div class="charts-grid">'
       +'<div class="chart-card"><div class="chart-title">Conversão do funil</div><div class="chart-subtitle">Mesmo período (jan–'+upTo+')</div><div class="chart-wrap-sm"><canvas id="cmp_conv"></canvas></div></div>'
       +'<div class="chart-card"><div class="chart-title" id="cmpSeasTitle">Sazonalidade</div><div class="chart-subtitle" id="cmpSeasSub"></div><div class="chart-wrap-sm"><canvas id="cmp_seas"></canvas></div></div>'
@@ -1382,11 +1412,14 @@ function renderComparativo() {
   // gráfico principal
   destroyChart('cmp_chart');
   charts['cmp_chart'] = new Chart(document.getElementById('cmp_chart'), {
-    type:'bar', data:{labels:buckets.labels, datasets:datasets},
+    type:'bar', data:{labels:plabels, datasets:datasets},
     options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{legend:legend, datalabels:{}, tooltip:Object.assign({}, tipBase, {callbacks:{
-        label:function(c){ return ' '+c.dataset.label+': '+cmpFmt(c.parsed.y,k,true)+(c.dataset._flags&&c.dataset._flags[c.dataIndex]?' (parcial)':''); }}})},
-      scales:{x:{grid:{display:false}}, y:{beginAtZero:true, grace:dense?'18%':'8%', grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:function(v){return cmpFmt(v,k);}}}}}
+        label:function(c){
+          var d = c.dataset;
+          if (d._proj) return ' '+d._year+' · projeção: ≈ '+cmpFmt((d._real[c.dataIndex]||0)+c.parsed.y,k,true);
+          return ' '+d.label+': '+cmpFmt(c.parsed.y,k,true)+(d._flags&&d._flags[c.dataIndex]?' (parcial)':''); }}})},
+      scales:{x:{stacked:true, grid:{display:false}}, y:{stacked:true, beginAtZero:true, grace:dense?'18%':'8%', grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:function(v){return cmpFmt(v,k);}}}}}
   });
   // funil: conversões
   var convDs = vis.map(function(y){
