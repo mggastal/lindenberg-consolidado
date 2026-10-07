@@ -1335,11 +1335,11 @@ function renderComparativo() {
     var hasProj = extras.some(function(e){return e > 0;});
     datasets.push({label:String(y), data:data, backgroundColor:col, borderColor:col, borderWidth:0, borderRadius:4, stack:st, _flags:flags,
       datalabels:{display:function(c){ return c.dataset.data[c.dataIndex] > 0 && !(extras[c.dataIndex] > 0); }, anchor:'end', align:'end', offset:dense?2:1,
-        rotation:dense?-90:0, color:lc, font:{size:dense?8.5:10, weight:'700'}, clamp:true, formatter:function(v){ return cmpFmt(v,k); }}});
+        rotation:dense?-90:0, color:lc, font:{size:dense?11:12.5, weight:'700'}, clamp:true, formatter:function(v){ return cmpFmt(v,k); }}});
     if (hasProj) datasets.push({label:y+' · projeção', _proj:true, _year:y, _real:data, data:extras.map(function(e){return e > 0 ? e : null;}),
       backgroundColor:hexA(col, 0.22), borderColor:col, borderWidth:1.2, borderDash:[4,3], borderRadius:4, stack:st,
       datalabels:{display:function(c){ return extras[c.dataIndex] > 0; }, anchor:'end', align:'end', offset:dense?2:1, rotation:dense?-90:0,
-        color:lc, font:{size:dense?8.5:10, weight:'700'}, clamp:true,
+        color:lc, font:{size:dense?11:12.5, weight:'700'}, clamp:true,
         formatter:function(v, c){ return '≈ '+cmpFmt((data[c.dataIndex]||0)+v, k); }}});
   });
   var projNote = volOn
@@ -1397,7 +1397,7 @@ function renderComparativo() {
     +'</div>'
     +'<div class="cmp-cards">'+cards+'</div>'
     +'<div class="charts-grid" style="grid-template-columns:1fr;"><div class="chart-card"><div class="chart-title">'+M.label+(per==='anual'?' — por ano':' — '+per)+'</div>'
-    +'<div class="chart-subtitle">'+vis.join(' · ')+projNote+'</div><div class="chart-wrap" style="height:'+(nBars>15?400:340)+'px"><canvas id="cmp_chart"></canvas></div></div></div>'
+    +'<div class="chart-subtitle">'+vis.join(' · ')+projNote+'</div><div class="chart-wrap" style="height:'+(nBars>15?480:380)+'px"><canvas id="cmp_chart"></canvas></div></div></div>'
     +'<div class="charts-grid">'
       +'<div class="chart-card"><div class="chart-title">Conversão do funil</div><div class="chart-subtitle">Mesmo período (jan–'+upTo+')</div><div class="chart-wrap-sm"><canvas id="cmp_conv"></canvas></div></div>'
       +'<div class="chart-card"><div class="chart-title" id="cmpSeasTitle">Sazonalidade</div><div class="chart-subtitle" id="cmpSeasSub"></div><div class="chart-wrap-sm"><canvas id="cmp_seas"></canvas></div></div>'
@@ -1419,7 +1419,7 @@ function renderComparativo() {
           var d = c.dataset;
           if (d._proj) return ' '+d._year+' · projeção: ≈ '+cmpFmt((d._real[c.dataIndex]||0)+c.parsed.y,k,true);
           return ' '+d.label+': '+cmpFmt(c.parsed.y,k,true)+(d._flags&&d._flags[c.dataIndex]?' (parcial)':''); }}})},
-      scales:{x:{stacked:true, grid:{display:false}}, y:{stacked:true, beginAtZero:true, grace:dense?'18%':'8%', grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:function(v){return cmpFmt(v,k);}}}}}
+      scales:{x:{stacked:true, grid:{display:false}}, y:{stacked:true, beginAtZero:true, grace:dense?'24%':'12%', grid:{color:'rgba(0,0,0,0.04)'}, ticks:{callback:function(v){return cmpFmt(v,k);}}}}}
   });
   // funil: conversões
   var convDs = vis.map(function(y){
