@@ -950,12 +950,12 @@ function renderBlock(prefix, rows) {
   comboChart(prefix+'_c1', labels,
     agg.map(function(a){return a.leads;}),
     agg.map(function(a){return a.cpl;}),
-    'Leads', 'CPL', 'rgba(200,16,46,0.18)', CR, 'R$ ', {partial:pflags, hatch:hflags, proj:agg.map(function(a){return a.proj_leads;})});
+    'Leads', 'CPL', 'rgba(200,16,46,0.18)', CR, 'R$ ', {partial:pflags, hatch:hflags});
 
   comboChart(prefix+'_c2', labels,
     agg.map(function(a){return a.visitas;}),
     agg.map(function(a){return a.cpv;}),
-    'Visitas', 'Custo/Visita', 'rgba(29,106,114,0.18)', CT, 'R$ ', {partial:pflags, hatch:hflags, proj:agg.map(function(a){return a.proj_visitas;})});
+    'Visitas', 'Custo/Visita', 'rgba(29,106,114,0.18)', CT, 'R$ ', {partial:pflags, hatch:hflags});
 
   tripleChart(prefix+'_c3', labels,
     agg.map(function(a){return a.vendas;}),
