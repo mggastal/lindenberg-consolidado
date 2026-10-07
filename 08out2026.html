@@ -780,26 +780,10 @@ function lineDL(pfx, color) {
   };
 }
 
-// Hachura para a barra do mês em andamento
-function hatchPattern(color) {
-  var c = document.createElement('canvas'); c.width = 10; c.height = 10;
-  var x = c.getContext('2d');
-  x.strokeStyle = color; x.lineWidth = 1.7; x.globalAlpha = 0.65;
-  x.beginPath();
-  x.moveTo(-1,11); x.lineTo(11,-1);
-  x.moveTo(-6,6);  x.lineTo(6,-6);
-  x.moveTo(4,16);  x.lineTo(16,4);
-  x.stroke();
-  return x.createPattern(c, 'repeat');
-}
-function partialBg(base, hatchColor, flags) {
-  if (!flags || !flags.some(Boolean)) return base;
-  return flags.map(function(f){ return f ? hatchPattern(hatchColor) : base; });
-}
-function partialPoints(color, flags) {
-  if (!flags || !flags.some(Boolean)) return color;
-  return flags.map(function(f){ return f ? '#FFFFFF' : color; });
-}
+// Mês em andamento: sem hachura (mesmo padrão dos demais)
+function hatchPattern(color) { return color; }  // mês parcial mantém o mesmo padrão (sem hachura)
+function partialBg(base, hatchColor, flags) { return base; }
+function partialPoints(color, flags) { return color; }
 function projDataset(barVals, flags, proj, color) {
   return {type:'bar', label:'Projeção (ritmo atual)', stack:'s',
     data: barVals.map(function(v,i){ return flags[i] ? Math.max(0, proj[i]-v) : null; }),
@@ -874,7 +858,7 @@ function barChart(id, labels, vals, label, color, opts) {
     data:{labels, datasets:[{
       label, data:vals,
       backgroundColor: vals.map(function(v,i){return flags&&flags[i] ? hatchPattern(color) : (v>0?color:'rgba(196,184,181,0.4)');}),
-      borderColor: color, borderWidth: flags&&flags.some(Boolean) ? vals.map(function(v,i){return flags[i]?1.2:0;}) : 0,
+      borderColor: color, borderWidth: flags&&flags.some(Boolean) ? 0 : 0,
       borderRadius:6
     }]},
     options:{
@@ -1296,7 +1280,7 @@ function renderComparativo() {
     });
     var col = cmpColor(y, YEARS);
     return {label:String(y), data:data, backgroundColor: flags.some(Boolean) ? flags.map(function(f){return f?hatchPattern(col):col;}) : col,
-      borderColor:col, borderWidth: flags.some(Boolean) ? flags.map(function(f){return f?1.2:0;}) : 0, borderRadius:4, _flags:flags};
+      borderColor:col, borderWidth: flags.some(Boolean) ? 0 : 0, borderRadius:4, _flags:flags};
   });
   var nBars = datasets.length * buckets.labels.length;
   var showAll = nBars <= 24;
