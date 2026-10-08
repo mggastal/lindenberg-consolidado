@@ -74,9 +74,9 @@ def build_data(H, external):
         leads = num(h['Leads']) or 0
         vgv = num(h['VGV']) or 0
         vendas = num(h['Vendas']) or 0
-        # venda externa: o VGV fica só no Geral (EXTERNAL_SALES), não no produto
+        # venda externa: o VGV fica só no Geral (EXTERNAL_SALES), não no produto; o produto de origem vem do campo 'origem'
         for e in external:
-            if e['ano'] == h['ano'] and e['mes'] == h['Mês'] and e['descricao'].startswith(h['Produto']):
+            if e['ano'] == h['ano'] and e['mes'] == h['Mês'] and (e.get('origem') or e['descricao']).startswith(h['Produto']):
                 vgv = max(0, vgv - e['vgv'])
                 vendas = max(0, vendas - e['vendas'])
         data.append({"ano": h['ano'], "mes": h['Mês'], "produto": h['Produto'],
