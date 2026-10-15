@@ -456,6 +456,8 @@ body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
 .cmp-tsub{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--gray-dark);margin-left:8px;}
 .cmp-prev{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px;}
 .cmp-prev .cmp-sub{margin:0;}
+.cmp-full{font-size:10.5px;color:var(--text-light);margin:-2px 0 2px;}
+.cmp-fullcol{color:var(--text-light);border-left:1px solid var(--gray-light);}
 .cmp-prev .cmp-pill{align-self:auto;font-size:10.5px;padding:2px 7px;}
 .cmp-spark{display:block;margin-left:auto;}
 .cmp-spark-td{width:100px;padding-top:4px;padding-bottom:4px;}
@@ -1257,6 +1259,7 @@ function renderComparativo() {
     for (var i = from; i <= to; i++) { var c = cell[y][i]; if (!c) continue; any = true; t.midia+=c.midia; t.leads+=c.leads; t.visitas+=c.visitas; t.vendas+=c.vendas; t.vgv+=c.vgv; }
     return any ? t : null;
   }
+  var fullYears = vis.filter(function(y){ return y < curY; });   // anos fechados: mostra também o ano completo
   function ytd(y) { return fullIdx >= 0 ? sum(y, 0, fullIdx) : null; }
   function metricVal(t, key) { return t ? CMP_METRICS[key].val(t) : null; }
   function lastTwo(key) {   // último ano visível vs anterior visível, mesmo período
@@ -1280,6 +1283,7 @@ function renderComparativo() {
     for (var j = vis.length-2; j >= 0; j--) {
       var pv = metricVal(ytd(vis[j]), key);
       prev += '<div class="cmp-prev"><span class="cmp-sub">'+vis[j]+': '+cmpFmt(pv,key,true)+'</span>'+cmpPill(cmpDelta(cur,pv), CMP_METRICS[key].good)+'</div>';
+      if (vis[j] < curY) { var fv0 = metricVal(sum(vis[j],0,11), key); if (fv0 !== null) prev += '<div class="cmp-full">'+vis[j]+' ano completo: '+cmpFmt(fv0,key,true)+'</div>'; }
     }
     return '<div class="kpi-card cmp-card'+(key===k?' sel':'')+'" onclick="setCmp(\''+key+'\')">'
       +'<div class="kpi-label">'+CMP_METRICS[key].label+'</div>'
@@ -1352,7 +1356,8 @@ function renderComparativo() {
   var effKeys = ['cpl','cpv','cpvenda','lpv','lpvenda','bvgv','conv_lv','conv_vv','conv_lvd'];
   var effHead = vis.map(function(y){return '<th class="num">'+y+'</th>';}).join('')
     + '<th class="num">Tendência</th>'
-    + (vis.length>1 ? vis.slice(0,-1).reverse().map(function(y){return '<th class="num">'+vis[vis.length-1]+' vs '+y+'</th>';}).join('') : '<th class="num">Variação</th>');
+    + (vis.length>1 ? vis.slice(0,-1).reverse().map(function(y){return '<th class="num">'+vis[vis.length-1]+' vs '+y+'</th>';}).join('') : '<th class="num">Variação</th>')
+    + fullYears.map(function(y){return '<th class="num cmp-fullcol">'+y+' · ano completo</th>';}).join('');
   function cmpVarCells(vals, good) {
     var n = vals.length;
     if (n < 2) return '<td class="num">—</td>';
@@ -1367,23 +1372,27 @@ function renderComparativo() {
     var present = vals.filter(function(v){return v!==null;});
     var best = present.length > 1 ? (Mx.good==='up' ? Math.max.apply(null,present) : Math.min.apply(null,present)) : null;
     var tds = vals.map(function(v){ return '<td class="num'+(v!==null&&v===best?' best':'')+'">'+cmpFmt(v,key,true)+'</td>'; }).join('');
-    return '<tr><td class="cmp-name">'+Mx.label+'</td>'+tds+cmpSparkCell(vals, Mx.good)+cmpVarCells(vals, Mx.good)+'</tr>';
+    var fvTds = fullYears.map(function(y){ return '<td class="num cmp-fullcol">'+cmpFmt(metricVal(sum(y,0,11),key),key,true)+'</td>'; }).join('');
+    return '<tr><td class="cmp-name">'+Mx.label+'</td>'+tds+cmpSparkCell(vals, Mx.good)+cmpVarCells(vals, Mx.good)+fvTds+'</tr>';
   }).join('');
 
   // ----- tabela por empreendimento (métrica selecionada)
   var plist = getProducts().map(function(p){
     var pr = DATA.filter(function(d){return d.produto===p;});
     function s2(y){ var t={midia:0,leads:0,visitas:0,vendas:0,vgv:0},a=false; pr.forEach(function(r){ if(r.ano===y && MES_ORDER[r.mes]-1<=fullIdx){a=true;t.midia+=r.midia_paga;t.leads+=r.leads;t.visitas+=r.visitas;t.vendas+=r.vendas;t.vgv+=r.vgv;} }); return a?t:null; }
-    return {nome:p, vals:vis.map(function(y){ return metricVal(s2(y),k); })};
+    function s2f(y){ var t={midia:0,leads:0,visitas:0,vendas:0,vgv:0},a=false; pr.forEach(function(r){ if(r.ano===y){a=true;t.midia+=r.midia_paga;t.leads+=r.leads;t.visitas+=r.visitas;t.vendas+=r.vendas;t.vgv+=r.vgv;} }); return a?t:null; }
+    return {nome:p, vals:vis.map(function(y){ return metricVal(s2(y),k); }), full:fullYears.map(function(y){ return metricVal(s2f(y),k); })};
   }).filter(function(x){ return x.vals.some(function(v){return v!==null;}); });
   plist.sort(function(a,b){ return (b.vals[b.vals.length-1]||0)-(a.vals[a.vals.length-1]||0); });
   var gvals = vis.map(function(y){ return metricVal(ytd(cmpState.prod==='Geral'?y:y),k); });
   var gAll = vis.map(function(y){ var t={midia:0,leads:0,visitas:0,vendas:0,vgv:0},a=false; geral.forEach(function(r){ if(r.ano===y&&MES_ORDER[r.mes]-1<=fullIdx){a=true;t.midia+=r.midia_paga;t.leads+=r.leads;t.visitas+=r.visitas;t.vendas+=r.vendas;t.vgv+=r.vgv;} }); return metricVal(a?t:null,k); });
-  var allRows = [{nome:'Geral', vals:gAll, geral:true}].concat(plist);
+  var gFull = fullYears.map(function(y){ var t={midia:0,leads:0,visitas:0,vendas:0,vgv:0},a=false; geral.forEach(function(r){ if(r.ano===y){a=true;t.midia+=r.midia_paga;t.leads+=r.leads;t.visitas+=r.visitas;t.vendas+=r.vendas;t.vgv+=r.vgv;} }); return metricVal(a?t:null,k); });
+  var allRows = [{nome:'Geral', vals:gAll, full:gFull, geral:true}].concat(plist);
   var prodBody = allRows.map(function(x){
     return '<tr'+(x.geral?' class="cmp-geral"':'')+'><td class="cmp-name">'+x.nome+'</td>'
       +x.vals.map(function(v){return '<td class="num">'+cmpFmt(v,k,true)+'</td>';}).join('')
-      +cmpSparkCell(x.vals, M.good)+cmpVarCells(x.vals, M.good)+'</tr>';
+      +cmpSparkCell(x.vals, M.good)+cmpVarCells(x.vals, M.good)
+      +x.full.map(function(v){return '<td class="num cmp-fullcol">'+cmpFmt(v,k,true)+'</td>';}).join('')+'</tr>';
   }).join('');
 
   var scopeTxt = cmpState.prod === 'Geral' ? 'Consolidado' : cmpState.prod;
