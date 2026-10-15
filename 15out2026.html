@@ -456,6 +456,8 @@ body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
 .cmp-tsub{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--gray-dark);margin-left:8px;}
 .cmp-prev{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px;}
 .cmp-prev .cmp-sub{margin:0;}
+.cmp-per{font-weight:600;letter-spacing:0;text-transform:none;color:var(--text-light);margin-left:4px;}
+.cmp-thsub{display:block;font-size:9px;font-weight:600;letter-spacing:0.02em;text-transform:none;opacity:.85;margin-top:1px;}
 .cmp-full{font-size:10.5px;color:var(--text-light);margin:-2px 0 2px;}
 .cmp-fullcol{color:var(--text-light);border-left:1px solid var(--gray-light);}
 .cmp-prev .cmp-pill{align-self:auto;font-size:10.5px;padding:2px 7px;}
@@ -1282,11 +1284,11 @@ function renderComparativo() {
     var r = lastTwo(key), cur = r.c, prev = '';
     for (var j = vis.length-2; j >= 0; j--) {
       var pv = metricVal(ytd(vis[j]), key);
-      prev += '<div class="cmp-prev"><span class="cmp-sub">'+vis[j]+': '+cmpFmt(pv,key,true)+'</span>'+cmpPill(cmpDelta(cur,pv), CMP_METRICS[key].good)+'</div>';
+      prev += '<div class="cmp-prev"><span class="cmp-sub">'+vis[j]+' (jan–'+upTo+'): '+cmpFmt(pv,key,true)+'</span>'+cmpPill(cmpDelta(cur,pv), CMP_METRICS[key].good)+'</div>';
       if (vis[j] < curY) { var fv0 = metricVal(sum(vis[j],0,11), key); if (fv0 !== null) prev += '<div class="cmp-full">'+vis[j]+' ano completo: '+cmpFmt(fv0,key,true)+'</div>'; }
     }
     return '<div class="kpi-card cmp-card'+(key===k?' sel':'')+'" onclick="setCmp(\''+key+'\')">'
-      +'<div class="kpi-label">'+CMP_METRICS[key].label+'</div>'
+      +'<div class="kpi-label">'+CMP_METRICS[key].label+' <span class="cmp-per">'+(vis.length?vis[vis.length-1]:'')+' · jan–'+upTo+'</span></div>'
       +'<div class="kpi-value">'+cmpFmt(cur,key,true)+'</div>'+(prev || '<div class="cmp-sub">&nbsp;</div>')+'</div>';
   }).join('');
 
@@ -1354,10 +1356,10 @@ function renderComparativo() {
 
   // ----- tabela de eficiência (mesmo período)
   var effKeys = ['cpl','cpv','cpvenda','lpv','lpvenda','bvgv','conv_lv','conv_vv','conv_lvd'];
-  var effHead = vis.map(function(y){return '<th class="num">'+y+'</th>';}).join('')
+  var effHead = vis.map(function(y){return '<th class="num">'+y+'<span class="cmp-thsub">jan–'+upTo+'</span></th>';}).join('')
     + '<th class="num">Tendência</th>'
-    + (vis.length>1 ? vis.slice(0,-1).reverse().map(function(y){return '<th class="num">'+vis[vis.length-1]+' vs '+y+'</th>';}).join('') : '<th class="num">Variação</th>')
-    + fullYears.map(function(y){return '<th class="num cmp-fullcol">'+y+' · ano completo</th>';}).join('');
+    + (vis.length>1 ? vis.slice(0,-1).reverse().map(function(y){return '<th class="num">'+vis[vis.length-1]+' vs '+y+'<span class="cmp-thsub">jan–'+upTo+'</span></th>';}).join('') : '<th class="num">Variação</th>')
+    + fullYears.map(function(y){return '<th class="num cmp-fullcol">'+y+'<span class="cmp-thsub">ano completo</span></th>';}).join('');
   function cmpVarCells(vals, good) {
     var n = vals.length;
     if (n < 2) return '<td class="num">—</td>';
