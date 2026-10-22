@@ -189,7 +189,6 @@ footer{max-width:1400px;margin:0 auto;padding:10px 32px 40px;font-size:11px;colo
   <button class="nav-btn" data-s="tend">Tendência</button>
   <button class="nav-btn" data-s="status">Status dos leads</button>
   <button class="nav-btn" data-s="vicio">Vícios de descarte<span class="cnt" id="cntVicio"></span></button>
-  <button class="nav-btn" data-s="qualif">Qualificação<span class="cnt" id="cntQual"></span></button>
   <button class="nav-btn" data-s="mudanca">Mudanças bruscas<span class="cnt" id="cntMud"></span></button>
   <button class="nav-btn" data-s="ficha">Ficha do corretor</button>
 </div></nav>
@@ -289,24 +288,6 @@ footer{max-width:1400px;margin:0 auto;padding:10px 32px 40px;font-size:11px;colo
   <div class="callout" id="calloutVicio"></div>
   <div class="table-block">
     <div class="table-scroll"><table class="summary-table" id="tblVicio"></table></div>
-  </div>
-</section>
-
-<!-- ═══ QUALIFICAÇÃO ═══ -->
-<section class="section" id="s-qualif">
-  <div class="section-header">
-    <div class="section-title">Quem não qualifica <span class="tag" id="tagQual"></span></div>
-    <div class="section-note"><b>Taxa de qualificação</b> = leads que chegaram a Qualificado, Visita, Proposta ou Venda ÷ leads recebidos. A <b>taxa esperada</b> é a média do time <b>nos mesmos produtos</b> que o corretor recebeu — assim ninguém é prejudicado por pegar produto difícil.</div>
-  </div>
-  <div class="kpi-grid" id="kpiQual"></div>
-  <div class="chart-card">
-    <div class="chart-title">Taxa de qualificação: corretor x esperado</div>
-    <div class="chart-subtitle" id="stQual"></div>
-    <div class="legend"><span><i style="background:#C8102E"></i>Corretor abaixo do esperado</span><span><i style="background:#7A6E6C"></i>Corretor dentro do esperado</span><span><i style="background:#1baf7a"></i>Corretor acima do esperado</span><span><i style="background:#E3DAD8"></i>Taxa esperada (média dos mesmos produtos)</span></div>
-    <div class="chart-wrap-lg" id="wrapQual"><canvas id="c_qual"></canvas></div>
-  </div>
-  <div class="table-block">
-    <div class="table-scroll"><table class="summary-table" id="tblQual"></table></div>
   </div>
 </section>
 
@@ -610,14 +591,14 @@ function run(){
   const filtered = F.p>=0 || F.e>=0 || F.mi>=0 || F.de>0 || F.ate<MESES.length-1;
   $('fClear').style.display = filtered ? 'inline' : 'none';
   const tag = (F.p>=0 ? D.dims.p[F.p] : 'Todos os produtos') + ' · ' + mesLbl(F.de) + '–' + mesLbl(F.ate);
-  ['tagGeral','tagTend','tagStatus','tagVicio','tagQual','tagMud'].forEach(i => $(i).textContent = tag);
+  ['tagGeral','tagTend','tagStatus','tagVicio','tagMud'].forEach(i => $(i).textContent = tag);
   const cors = [...R.C.values()].filter(o => o.fin >= F.min);
   R.cors = cors;
   const nV = cors.filter(o=>o.vicio).length, nQ = cors.filter(o=>o.qFlag==='nunca'||o.qFlag==='baixo').length, nMu = cors.filter(isMud).length;
-  $('cntVicio').textContent = nV; $('cntQual').textContent = nQ; $('cntMud').textContent = nMu;
+  $('cntVicio').textContent = nV; $('cntMud').textContent = nMu;
   // seletor da ficha
   fillFicha();
-  renderGeral(cors); renderTend(); renderStatus(); renderVicio(cors); renderQual(cors); renderMud(cors);
+  renderGeral(cors); renderTend(); renderStatus(); renderVicio(cors); renderMud(cors);
   if ($('s-ficha').classList.contains('active')) renderFicha();
 }
 function fillFicha(){
@@ -788,39 +769,6 @@ function renderVicio(cors){
     {h:'Sem contato', v:o=>o.pi>=10?o.semRate:-1, r:o=>o.pi>=10?`${pct(o.semRate)}<span class="sub">time ${pct(R.T.semRate)}</span>`:'–', cls:o=>semAlerta(o)?'taxa':''},
     {h:'Alerta', l:1, v:o=>(o.vicio?2:0)+(semAlerta(o)?1:0)+o.vX, r:o=>(o.vicio?`<span class="flag f-red">Vício de motivo</span>`:'') + (semAlerta(o)?'<span class="flag f-soft">Descarta sem contato</span>':'')},
   ], rows, 5);
-}
-
-function renderQual(cors){
-  const T = R.T;
-  const nunca = cors.filter(o=>o.qFlag==='nunca'), baixo = cors.filter(o=>o.qFlag==='baixo'), alto = cors.filter(o=>o.qFlag==='alto');
-  kpis($('kpiQual'), [
-    ['Taxa média', pct(T.qual/T.leads,1), `${fmt(T.qual)} qualificados / ${fmt(T.leads)} leads`],
-    ['Nunca qualificam', nunca.length, 'zero qualificados com ≥2 esperados', true],
-    ['Abaixo do esperado', baixo.length, 'diferença grande demais para ser azar', true],
-    ['Acima do esperado', alto.length, '≥1,8× o esperado'],
-  ]);
-  const rs = cors.filter(o=>o.expQ>0).sort((a,b)=>(a.qual-a.expQ)-(b.qual-b.expQ));
-  const w = rs[0];
-  $('stQual').innerHTML = w ? `Cada corretor tem duas barras: a colorida é a taxa dele, a cinza é a média do time nos mesmos produtos. Ex.: <b>${esc(D.dims.c[w.c])}</b> qualificou ${pct(w.qual/w.leads,1)} dos leads; nos produtos que recebeu, a média é ${pct(w.expQ/w.leads,1)} — faltaram ~${Math.round(w.expQ-w.qual)} qualificados. Ordenado de quem mais ficou devendo qualificados para quem mais passou do esperado.` : '';
-  $('wrapQual').style.height = Math.max(300, rs.length*30+60)+'px';
-  const qc = o => o.qFlag==='nunca'||o.qFlag==='baixo' ? '#C8102E' : o.qFlag==='alto' ? '#1baf7a' : '#7A6E6C';
-  chart('c_qual', {type:'bar', data:{labels: rs.map(o=>D.dims.c[o.c]), datasets:[
-      {label:'Taxa do corretor', data: rs.map(o=>o.qual/o.leads*100), backgroundColor: rs.map(qc), borderRadius:3, maxBarThickness:11},
-      {label:'Taxa esperada', data: rs.map(o=>o.expQ/o.leads*100), backgroundColor:'#E3DAD8', borderRadius:3, maxBarThickness:11}]},
-    options:{indexAxis:'y', maintainAspectRatio:false, interaction:{mode:'index', intersect:false}, onClick:(e,el)=>{ if (el.length) openCor(rs[el[0].index].c); },
-      plugins:{legend:{display:false}, tooltip:{callbacks:{title:it=>D.dims.c[rs[it[0].dataIndex].c], label:it=>{ const o = rs[it.dataIndex];
-        return it.datasetIndex===0 ? `Corretor: ${pct(o.qual/o.leads,1)} — ${fmt(o.qual)} qualificados em ${fmt(o.leads)} leads` : `Esperado: ${pct(o.expQ/o.leads,1)} — seriam ~${o.expQ.toFixed(1).replace('.',',')} qualificados`; },
-        footer:it=>{ const o = rs[it[0].dataIndex]; return 'Clique para abrir a ficha'; }}}},
-      scales:{x:{grid:{color:'#F0EDEC'}, ticks:{callback:v=>v+'%'}, title:{display:true, text:'% dos leads qualificados'}}, y:{grid:{display:false}, ticks:{autoSkip:false}}}}});
-  table($('tblQual'), [
-    {h:'Corretor', l:1, v:o=>D.dims.c[o.c], r:o=>`${corName(o)}<span class="sub">${esc(D.dims.e[o.equipe])}</span>`},
-    {h:'Leads', v:o=>o.leads, r:o=>fmt(o.leads)},
-    {h:'Qualificados', v:o=>o.qual, r:o=>`${fmt(o.qual)}<span class="sub">esperado ~${o.expQ.toFixed(1).replace('.',',')}</span>`},
-    {h:'Taxa', v:o=>o.qual/o.leads, r:o=>pct(o.qual/o.leads,1), cls:o=>o.qFlag==='nunca'||o.qFlag==='baixo'?'taxa':''},
-    {h:'Taxa esperada', v:o=>o.expQ/o.leads, r:o=>pct(o.expQ/o.leads,1), cls:()=>'muted'},
-    {h:'Pode ser azar?', v:o=>o.qP, r:o=>o.qP<0.01?'quase impossível':o.qP<0.05?'improvável':o.qP<0.2?'pouco provável':'sim', cls:o=>o.qP<0.05?'taxa':''},
-    {h:'Sinal', l:1, v:o=>({nunca:3,baixo:2,'':1,alto:0})[o.qFlag], r:o=>({nunca:'<span class="flag f-red">Nunca qualifica</span>', baixo:'<span class="flag f-soft">Abaixo do esperado</span>', alto:'<span class="flag f-gray">Acima do esperado</span>'})[o.qFlag]||''},
-  ], cors, 4, false);
 }
 
 function renderMud(cors){
