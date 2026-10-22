@@ -9,6 +9,10 @@ Uso:
 Parte do HTML mais recente do repositório (template) e substitui apenas:
   const DATA (produto x mês), const D (aba Reunião), #reuniao-meta, reportDate/obsDate.
 Não mexe em JS/CSS. O push dispara o workflow que regenera o index.html.
+
+Aba "Descartes": copia o relatório Motivos de Descarte (Lindenberg/Motivos de Descarte/) para
+DDmmmAAAA-descartes.html e aponta o iframe da aba para essa cópia (use --descartes para outro
+caminho ou --sem-descartes para não copiar). Rode gerar_relatorio.py de lá antes, para atualizar o relatório.
 """
 import argparse, csv, io, json, re, subprocess, sys
 from collections import defaultdict
@@ -18,6 +22,7 @@ from pathlib import Path
 SHEET_ID = "15HsjCSKf0gBTsz73jKQg-kuqPg9c7FSsJ2u39mSqklY"   # Revenue Board (aba Histórico = 1ª)
 CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 ROOT = Path(__file__).parent
+DESCARTES_PADRAO = ROOT.parent / 'Lindenberg' / 'Motivos de Descarte' / 'Lindenberg - Motivos de Descarte.html'
 MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 
@@ -133,6 +138,8 @@ def main():
     ap.add_argument('--dia', type=int, required=True, help='último dia do mês coberto pelos relatórios de mídia')
     ap.add_argument('--budget-meta', type=float, required=True, help='meta de investimento do mês (R$)')
     ap.add_argument('--obs', default=None, help='arquivo JSON com obs_grupos (opcional)')
+    ap.add_argument('--descartes', default=None, help='HTML do relatório Motivos de Descarte (default: pasta Lindenberg/Motivos de Descarte)')
+    ap.add_argument('--sem-descartes', action='store_true', help='não copia o relatório de descartes')
     ap.add_argument('--csv', default=None, help='CSV local do Histórico (default: baixa do Sheets público)')
     a = ap.parse_args()
 
@@ -176,6 +183,14 @@ def main():
     html = re.sub(r'(id="obsDate">)[^<]*', lambda m: m.group(1) + a.data, html, count=1)
 
     out = ROOT / f"{dt.day:02d}{ABR[dt.month - 1]}{dt.year}.html"
+    desc_src = Path(a.descartes) if a.descartes else DESCARTES_PADRAO
+    if not a.sem_descartes and desc_src.exists() and 'id="descFrame"' in html:
+        desc_out = ROOT / f"{out.stem}-descartes.html"
+        desc_out.write_text(desc_src.read_text(encoding='utf-8'), encoding='utf-8')
+        html = re.sub(r'(id="descFrame"[^>]*?data-src=")[^"]*(")', lambda m: m.group(1) + desc_out.name + m.group(2), html, count=1)
+        print('descartes:', desc_out.name, '(de', desc_src.name + ')')
+    elif not a.sem_descartes and 'id="descFrame"' in html:
+        print('AVISO: relatório de descartes não encontrado em', desc_src, '— a aba Descartes seguirá apontando para a cópia anterior')
     out.write_text(html, encoding='utf-8')
     print('gerado:', out.name, '| linhas DATA:', len(data), '| meta:', meta)
 

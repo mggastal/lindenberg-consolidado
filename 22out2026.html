@@ -505,6 +505,7 @@ body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
       <button class="switcher-btn active" id="sw-rb" onclick="switchPage('rb')">Consolidado</button>
       <button class="switcher-btn" id="sw-am" onclick="switchPage('am')">Mensal</button>
       <button class="switcher-btn" id="sw-cmp" onclick="switchPage('cmp')">Comparativo</button>
+      <button class="switcher-btn" id="sw-desc" onclick="switchPage('desc')">Descartes</button>
       <button class="switcher-btn" id="sw-obs" onclick="toggleObs()">Obs</button>
     </div>
 
@@ -576,6 +577,11 @@ body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
     <p>Dados exclusivos para uso no ambiente corporativo da Lindenberg. Não devem ser divulgados externamente sem autorização prévia.</p>
     <p class="app-footer-credit">Desenvolvido por Grigoletti Mídias</p>
   </footer>
+</div>
+
+<!-- PAGE: DESCARTES (relatório Motivos de Descarte, navegável dentro da apresentação) -->
+<div class="page" id="page-desc">
+  <iframe id="descFrame" src="" data-src="22out2026-descartes.html" style="width:100%;height:calc(100vh - var(--header-h, 64px));border:none;display:block;" title="Motivos de Descarte"></iframe>
 </div>
 
 <script>
@@ -2481,16 +2487,21 @@ function switchPage(page) {
   document.getElementById('page-rb').classList.toggle('active', page === 'rb');
   document.getElementById('page-am').classList.toggle('active', page === 'am');
   document.getElementById('page-cmp').classList.toggle('active', page === 'cmp');
+  document.getElementById('page-desc').classList.toggle('active', page === 'desc');
+  document.getElementById('sw-desc').classList.toggle('active', page === 'desc');
   document.getElementById('sw-rb').classList.toggle('active', page === 'rb');
   document.getElementById('sw-am').classList.toggle('active', page === 'am');
   document.getElementById('sw-cmp').classList.toggle('active', page === 'cmp');
-  document.getElementById('headerSub').textContent = page === 'rb' ? 'Revenue Board' : (page === 'cmp' ? 'Comparativo' : 'Análise Mensal');
+  document.getElementById('headerSub').textContent = page === 'rb' ? 'Revenue Board' : (page === 'cmp' ? 'Comparativo' : (page === 'desc' ? 'Descartes' : 'Análise Mensal'));
   window.scrollTo(0, 0);
   setTimeout(syncStickyOffsets, 50);
   if (page === 'rb') {
     setTimeout(renderAll, 50);
   } else if (page === 'cmp') {
     setTimeout(renderComparativo, 50);
+  } else if (page === 'desc') {
+    var df = document.getElementById('descFrame');
+    if (df && !df.__loaded) { df.__loaded = true; df.src = df.getAttribute('data-src'); }
   } else if (page === 'am') {
     // Load AM via srcdoc (single file, no CSP issues)
     var frame = document.getElementById('amFrame');
