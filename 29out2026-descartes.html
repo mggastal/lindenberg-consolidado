@@ -132,6 +132,11 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
 .trend-ctrl{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:6px;}
 .mix{display:flex;height:12px;width:180px;border-radius:3px;overflow:hidden;gap:1px;background:white;}
 .mix i{display:block;height:100%;}
+.mix.fluid{width:100%;min-width:60px;max-width:150px;}
+#tblFichaProd td.td-name{white-space:normal;min-width:120px;max-width:260px;line-height:1.3;}
+#tblFichaProd td,#tblFichaProd th{padding-left:10px;padding-right:10px;}
+#tblFichaProd td:last-child{width:34%;}
+#tblFichaProd td .muted.sub-q{display:block;font-size:10.5px;}
 .flag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:10px;margin:1px 4px 1px 0;white-space:nowrap;}
 .flag.f-red{background:var(--red);color:white;}
 .flag.f-soft{background:var(--red-muted);color:var(--red-dark);}
@@ -525,7 +530,7 @@ function mudanca(o, T, nM){
 }
 
 // ───────── helpers de UI ─────────
-const mixBar = (v, w=180) => { const s = sum(v)||1; return `<span class="mix" style="width:${w}px">${v.map((x,g)=> x ? `<i style="width:${x/s*100}%;background:${COL[g]}" data-tip="${esc(GR[g])}: ${pct(x/s)} (${fmt(x)})"></i>` : '').join('')}</span>`; };
+const mixBar = (v, w=180) => { const s = sum(v)||1; return `<span class="mix${w==='fluid'?' fluid':''}"${w==='fluid'?'':` style="width:${w}px"`}>${v.map((x,g)=> x ? `<i style="width:${x/s*100}%;background:${COL[g]}" data-tip="${esc(GR[g])}: ${pct(x/s)} (${fmt(x)})"></i>` : '').join('')}</span>`; };
 const gDot = g => `<span class="dot" style="background:${COL[g]}"></span>`;
 const corName = o => `<a href="#" onclick="openCor(${o.c});return false" style="color:inherit">${esc(D.dims.c[o.c])}</a>`;
 const legend = el => { el.innerHTML = GR.map((g,i)=>`<span><i style="background:${COL[i]}"></i>${g}</span>`).join(''); };
@@ -817,8 +822,8 @@ function renderFicha(){
   table($('tblFichaProd'), [
     {h:'Produto', l:1, v:x=>D.dims.p[x.p], r:x=>esc(D.dims.p[x.p])},
     {h:'Leads', v:x=>x.leads, r:x=>fmt(x.leads)},
-    {h:'Qualif.', v:x=>x.q, r:x=>`${x.q} <span class="muted">(média ${pct(R.P[x.p].qual/R.P[x.p].leads,1)})</span>`},
-    {h:'Mix', l:1, v:x=>x.fin, r:x=>mixBar(x.g,140)},
+    {h:'Qualif.', v:x=>x.q, r:x=>`${x.q}<span class="muted sub-q">média ${pct(R.P[x.p].qual/R.P[x.p].leads,1)}</span>`},
+    {h:'Mix', l:1, v:x=>x.fin, r:x=>mixBar(x.g,'fluid')},
   ], ps, 1);
   const ms = [...o.mo.entries()].map(([i,n])=>({i,n}));
   table($('tblFichaMot'), [
