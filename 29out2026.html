@@ -1819,7 +1819,7 @@ main{max-width:1400px;margin:0 auto;padding:32px;}
 .leads-table td.lt-diff{color:var(--amber);font-weight:600;}
 
 /* VOLUME ROW — chart + table side by side */
-.chart-wrap-leads{position:relative;height:360px;transition:height 0.4s ease;}
+.chart-wrap-leads{position:relative;height:324px;transition:height 0.4s ease;}
 .vol-row{display:grid;grid-template-columns:1fr 220px;gap:20px;align-items:start;}
 .vol-chart{}
 .vol-table{min-width:0;}
@@ -2132,9 +2132,9 @@ window.addEventListener("load", function init(){
   // Only use months where we have 2026 data
   var meses26 = MES.filter(function(ms){ return ltKpi['2026'] && ltKpi['2026'][ms]>0; });
 
-  // Leads chart grows with number of months (base 360px + 30px per month)
+  // Leads chart grows with number of months (base 360px + 40px per month), -10% em 29/10
   var nMeses = meses26.length;
-  var leadsH = Math.min(360 + (nMeses - 1) * 40, 700);
+  var leadsH = Math.round(Math.min(360 + (nMeses - 1) * 40, 700) * 0.9);
   var wrapEl = document.getElementById('wrapLeadsVol');
   if (wrapEl) wrapEl.style.height = leadsH + 'px';
 
