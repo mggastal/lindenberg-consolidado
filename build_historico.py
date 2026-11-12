@@ -56,9 +56,21 @@ reunioes.sort(key=lambda r: parse_date(r['data']), reverse=True)
 print(f"Total: {len(reunioes)} reuniões")
 
 # ── Cards ─────────────────────────────────────────────────────────────────────
+def comite_html(arq):
+    return (f'<div class="hcomite"><div class="hcomite-frame"><iframe data-src="{arq}" title="Apresentação do comitê, Visão Online" '
+            f'allow="fullscreen" allowfullscreen></iframe></div>'
+            f'<a class="hcomite-link" href="{arq}" target="_blank" rel="noopener">Abrir apresentação em nova aba</a></div>')
+
 def make_card(r):
     n_obs = sum(len(g['items']) for g in r.get('obs_grupos', []))
     obs_label = f'Observações ({n_obs})' if n_obs else 'Sem observações'
+    slug = r['url'].rsplit('/', 1)[-1]
+    comite_arq = f'{slug}-comite.html' if (REPO_ROOT / f'{slug}-comite.html').exists() else None
+    if comite_arq:   # a apresentação do comitê vive no bloco de observações da reunião
+        obs_label = (f'Observações ({n_obs}) · ' if n_obs else '') + 'Apresentação do comitê'
+        obs_corpo = (obs_html(r.get('obs_grupos', [])) if n_obs else '') + comite_html(comite_arq)
+    else:
+        obs_corpo = obs_html(r.get('obs_grupos', []))
     mes_ref = r.get('mes_ref', '')
     mes_badge = f'<span class="week-mes-badge">{mes_ref}</span>' if mes_ref else ''
     return f'''<div class="week-card">
@@ -82,7 +94,7 @@ def make_card(r):
     <span class="week-obs-label">{obs_label}</span>
     <span class="week-obs-arrow">▾</span>
   </div>
-  <div class="week-obs-body" style="display:none;">{obs_html(r.get("obs_grupos",[]))}</div>
+  <div class="week-obs-body" style="display:none;">{obs_corpo}</div>
 </div>'''
 
 cards = '\n'.join(make_card(r) for r in reunioes) or '<p style="color:#999;text-align:center;padding:40px;">Nenhuma reunião encontrada.</p>'
@@ -148,6 +160,10 @@ main{{max-width:960px;margin:0 auto;padding:32px 32px 60px;}}
 .hobs-list{{padding-left:16px;display:flex;flex-direction:column;gap:5px;}}
 .hobs-list li{{font-size:13px;color:var(--text);line-height:1.5;}}
 .hobs-empty{{font-size:12px;color:var(--gray-dark);font-style:italic;}}
+.hcomite{{width:100%;}}
+.hcomite-frame{{position:relative;width:100%;aspect-ratio:16/9;background:#1B1412;border-radius:12px;overflow:hidden;}}
+.hcomite-frame iframe{{position:absolute;inset:0;width:100%;height:100%;border:0;}}
+.hcomite-link{{display:inline-block;margin-top:10px;font-size:12.5px;color:var(--red);text-decoration:underline;}}
 
 footer{{text-align:center;padding:20px;font-size:11px;color:var(--gray-dark);}}
 
@@ -182,6 +198,9 @@ function toggleWeekObs(btn) {{
   btn.classList.toggle('open');
   var body = btn.nextElementSibling;
   body.style.display = body.style.display === 'none' ? 'flex' : 'none';
+  if (body.style.display === 'flex') {{
+    body.querySelectorAll('iframe[data-src]').forEach(function(f) {{ if (!f.getAttribute('src')) f.setAttribute('src', f.dataset.src); }});
+  }}
 }}
 </script>
 </body>
