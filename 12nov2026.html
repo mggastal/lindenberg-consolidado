@@ -529,6 +529,26 @@ body.print-mode *{box-shadow:none!important;text-shadow:none!important;}
     <div class="obs-panel-body" id="obsBody">
       <p class="obs-panel-empty">Sem observações registradas.</p>
     </div>
+<!--COMITE-->
+<style>
+.obs-panel{width:min(1180px,96vw);}
+#obsBody{display:none;}
+.obs-comite{padding:18px 24px 22px;}
+.obs-comite-frame{position:relative;width:min(100%,calc((100vh - 310px)*1.7778));aspect-ratio:16/9;margin:0 auto;background:#1B1412;border-radius:12px;overflow:hidden;}
+.obs-comite-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.obs-comite-link{display:inline-block;margin-top:10px;font-size:12.5px;color:var(--red);text-decoration:underline;}
+@media(max-width:768px){.obs-comite-frame{width:100%;}}
+</style>
+<div class="obs-comite">
+  <span class="obs-group-tag">Apresentação do comitê · Visão Online</span>
+  <div class="obs-comite-frame"><iframe id="comiteFrame" data-src="12nov2026-comite.html" title="Apresentação do comitê, Visão Online" allow="fullscreen" allowfullscreen></iframe></div>
+  <a class="obs-comite-link" href="12nov2026-comite.html" target="_blank" rel="noopener">Abrir em nova aba</a>
+</div>
+<script>(function(){var ov=document.getElementById('obsOverlay'),f=document.getElementById('comiteFrame');
+function c(){if(ov.classList.contains('open')&&!f.getAttribute('src')){f.setAttribute('src',f.dataset.src);}}
+new MutationObserver(c).observe(ov,{attributes:true,attributeFilter:['class']});
+f.addEventListener('load',function(){try{f.contentWindow.focus();}catch(e){}});})();</script>
+<!--/COMITE-->
   </div>
 </div>
 

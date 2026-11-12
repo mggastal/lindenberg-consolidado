@@ -54,6 +54,7 @@ def main():
     ap.add_argument('--budget-meta', type=float, required=True)
     ap.add_argument('--obs', default=None)
     ap.add_argument('--csv', default=None)
+    ap.add_argument('--comite', default=None, help='HTML da apresentação do comitê para embutir no painel Obs')
     ap.add_argument('--sem-sigavi', action='store_true')
     a = ap.parse_args()
 
@@ -67,6 +68,8 @@ def main():
         cmd += ['--obs', a.obs]
     if a.csv:
         cmd += ['--csv', a.csv]
+    if a.comite:
+        cmd += ['--comite', a.comite]
     subprocess.run(cmd, check=True, cwd=ROOT)
     print('\nPronto. Confira e depois publique (git add/commit/push).')
 

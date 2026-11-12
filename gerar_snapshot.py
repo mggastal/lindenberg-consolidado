@@ -27,6 +27,28 @@ MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','S
 ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 
 
+COMITE_BLOCO = '''<!--COMITE-->
+<style>
+.obs-panel{width:min(1180px,96vw);}
+#obsBody{display:none;}
+.obs-comite{padding:18px 24px 22px;}
+.obs-comite-frame{position:relative;width:min(100%,calc((100vh - 310px)*1.7778));aspect-ratio:16/9;margin:0 auto;background:#1B1412;border-radius:12px;overflow:hidden;}
+.obs-comite-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.obs-comite-link{display:inline-block;margin-top:10px;font-size:12.5px;color:var(--red);text-decoration:underline;}
+@media(max-width:768px){.obs-comite-frame{width:100%;}}
+</style>
+<div class="obs-comite">
+  <span class="obs-group-tag">Apresentação do comitê · Visão Online</span>
+  <div class="obs-comite-frame"><iframe id="comiteFrame" data-src="__ARQ__" title="Apresentação do comitê, Visão Online" allow="fullscreen" allowfullscreen></iframe></div>
+  <a class="obs-comite-link" href="__ARQ__" target="_blank" rel="noopener">Abrir em nova aba</a>
+</div>
+<script>(function(){var ov=document.getElementById('obsOverlay'),f=document.getElementById('comiteFrame');
+function c(){if(ov.classList.contains('open')&&!f.getAttribute('src')){f.setAttribute('src',f.dataset.src);}}
+new MutationObserver(c).observe(ov,{attributes:true,attributeFilter:['class']});
+f.addEventListener('load',function(){try{f.contentWindow.focus();}catch(e){}});})();</script>
+<!--/COMITE-->'''
+
+
 def num(s):
     s = (s or '').strip().replace('R$', '').replace('%', '').replace('\xa0', '').strip()
     if not s or s in ('-', '—'):
@@ -140,6 +162,7 @@ def main():
     ap.add_argument('--obs', default=None, help='arquivo JSON com obs_grupos (opcional)')
     ap.add_argument('--descartes', default=None, help='HTML do relatório Motivos de Descarte (default: pasta Lindenberg/Motivos de Descarte)')
     ap.add_argument('--sem-descartes', action='store_true', help='não copia o relatório de descartes')
+    ap.add_argument('--comite', default=None, help='HTML da apresentação do comitê (visualizador): copia para DDmmmAAAA-comite.html e embute no painel Obs')
     ap.add_argument('--csv', default=None, help='CSV local do Histórico (default: baixa do Sheets público)')
     a = ap.parse_args()
 
@@ -191,6 +214,15 @@ def main():
         print('descartes:', desc_out.name, '(de', desc_src.name + ')')
     elif not a.sem_descartes and 'id="descFrame"' in html:
         print('AVISO: relatório de descartes não encontrado em', desc_src, '— a aba Descartes seguirá apontando para a cópia anterior')
+    html = re.sub(r'<!--COMITE-->.*?<!--/COMITE-->\n?', '', html, flags=re.S)   # o bloco é por semana: só entra com --comite
+    if a.comite:
+        src = Path(a.comite)
+        dst = ROOT / f"{out.stem}-comite.html"
+        if src.resolve() != dst.resolve():
+            dst.write_text(src.read_text(encoding='utf-8'), encoding='utf-8')
+        bloco = COMITE_BLOCO.replace('__ARQ__', dst.name)
+        html, n_ = re.subn(r'(<p class="obs-panel-empty">[^<]*</p>\s*</div>)', lambda m: m.group(1) + '\n' + bloco, html, count=1)
+        print('comitê:', dst.name, '(embutido no painel Obs)' if n_ else '(AVISO: painel Obs não encontrado, não embutido)')
     out.write_text(html, encoding='utf-8')
     print('gerado:', out.name, '| linhas DATA:', len(data), '| meta:', meta)
 
