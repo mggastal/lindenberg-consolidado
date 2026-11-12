@@ -114,18 +114,30 @@ def build_data(H, external):
 
 
 def build_D(H, data, budget_key, budget):
+    # A linha "Geral" do Histórico tem fórmulas por intervalo de linhas (quebram com filtro/ordenação, ex.: 2025).
+    # Tudo que é somável vem da SOMA DAS LINHAS DE EMPREENDIMENTO por ano/mês. Do Geral só ficam os FACs do Sigavi
+    # (não existem por produto): FACs Sigavi, FACs Válidas, Tentando Contato e % Tx Aproveitamento.
     G = {(h['ano'], h['Mês']): h for h in H if h['Produto'] == 'Geral'}
+    PR = defaultdict(list)
+    for h in H:
+        if h['Produto'] != 'Geral':
+            PR[(h['ano'], h['Mês'])].append(h)
 
-    def g(y, m, col):
+    def g(y, m, col):  # só colunas de FAC (linha Geral)
         h = G.get((y, m))
         return (num(h[col]) or 0) if h else 0
 
-    def mp(y, m):  # Mídia Paga do Geral = Meta + Google (o CSV exporta 'Mídia Paga' arredondada, sem centavos)
-        h = G.get((y, m))
-        if not h:
-            return 0
-        a, b = num(h['Meta Ads']), num(h['Google Ads'])
-        return round((a or 0) + (b or 0), 2) if (a is not None or b is not None) else (num(h['Mídia Paga']) or 0)
+    def ps(y, m, col):  # soma dos empreendimentos
+        return round(sum((num(h[col]) or 0) for h in PR.get((y, m), [])), 2)
+
+    def mp(y, m):  # Mídia Paga = Meta + Google somados por empreendimento ('Mídia Paga' do CSV é arredondada, sem centavos)
+        rs = PR.get((y, m), [])
+        if any(num(h['Meta Ads']) is not None or num(h['Google Ads']) is not None for h in rs):
+            return round(sum((num(h['Meta Ads']) or 0) + (num(h['Google Ads']) or 0) for h in rs), 2)
+        return ps(y, m, 'Mídia Paga')
+
+    def cplf(inv, n):
+        return round(inv / n, 2) if n else 0
 
     vis = defaultdict(float)
     for d in data:
@@ -138,16 +150,16 @@ def build_D(H, data, budget_key, budget):
                          "valid_25": g(2025, m, 'FACs Válidas'), "valid_26": v,
                          "aprov_25": g(2025, m, '% Tx Aproveitamento'), "aprov_26": g(2026, m, '% Tx Aproveitamento'),
                          "tentando": round(t / v * 100, 2) if v else 0,
-                         "cpl_25": g(2025, m, 'CPL'), "cpl_26": g(2026, m, 'CPL'),
+                         "cpl_25": cplf(mp(2025, m), ps(2025, m, 'Leads')), "cpl_26": cplf(mp(2026, m), ps(2026, m, 'Leads')),
                          "invest_25": mp(2025, m), "invest_26": mp(2026, m)}
         for blk, fac, cpl, inv in (("google", 'Cadastro LP - GA', 'CPL Google Ads', 'Google Ads'),
                                    ("meta", 'Cadastros FB', 'CPL Meta Ads', 'Meta Ads')):
-            D[blk][m] = {"fac_25": g(2025, m, fac), "fac_26": g(2026, m, fac), "vis_25": 0, "vis_26": 0,
-                         "cpl_25": g(2025, m, cpl), "cpl_26": g(2026, m, cpl),
-                         "invest_25": g(2025, m, inv), "invest_26": g(2026, m, inv)}
+            D[blk][m] = {"fac_25": ps(2025, m, fac), "fac_26": ps(2026, m, fac), "vis_25": 0, "vis_26": 0,
+                         "cpl_25": cplf(ps(2025, m, inv), ps(2025, m, fac)), "cpl_26": cplf(ps(2026, m, inv), ps(2026, m, fac)),
+                         "invest_25": ps(2025, m, inv), "invest_26": ps(2026, m, inv)}
     D["invest"] = {str(y): {m: mp(y, m) for m in MES} for y in (2024, 2025, 2026)}
     D["visitas"] = {str(y): {m: vis[(y, m)] for m in MES} for y in (2025, 2026)}
-    D["leads_totais"] = {str(y): {m: int(g(y, m, 'Leads')) for m in MES} for y in (2025, 2026)}
+    D["leads_totais"] = {str(y): {m: int(ps(y, m, 'Leads')) for m in MES} for y in (2025, 2026)}
     D["meses"] = MES
     D["budget"] = {budget_key: budget}
     return D
