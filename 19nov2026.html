@@ -2132,11 +2132,12 @@ window.addEventListener("load", function init(){
   // Only use months where we have 2026 data
   var meses26 = MES.filter(function(ms){ return ltKpi['2026'] && ltKpi['2026'][ms]>0; });
 
-  // Leads chart grows with number of months (base 360px + 40px per month), -10% em 29/10
+  // Altura do gráfico de FACs: acompanha a tabela "Leads Totais" ao lado (cabeçalho 38 + 12 linhas de 38 + rodapé 40 = 534px,
+  // já contando dezembro para não mudar de tamanho a cada mês) + folga de ~36px. Em tela estreita (1 coluna) fica menor.
   var nMeses = meses26.length;
-  var leadsH = Math.round(Math.min(360 + (nMeses - 1) * 40, 700) * 0.9);
+  var leadsH = 570;
   var wrapEl = document.getElementById('wrapLeadsVol');
-  if (wrapEl) wrapEl.style.height = leadsH + 'px';
+  if (wrapEl) wrapEl.style.height = (window.innerWidth > 900 ? leadsH : 280) + 'px';
 
 
   // Cover KPIs (baseados no volume TOTAL de leads)
