@@ -203,8 +203,9 @@ def main():
     obs = json.loads(Path(a.obs).read_text(encoding='utf-8')) if a.obs else []
     vis_mes = D["visitas"][str(ano)][mes]
     meta = {"data": a.data, "facs": int(num(gm['FACs Sigavi']) or 0), "validas": int(num(gm['FACs Válidas']) or 0),
-            "aprov": num(gm['% Tx Aproveitamento']) or 0, "cpl": int(num(gm['CPL']) or 0),
-            "invest": int(mp_mes), "leads": int(num(gm['Leads']) or 0),
+            "aprov": num(gm['% Tx Aproveitamento']) or 0,
+            "cpl": int(round(mp_mes / D["leads_totais"][str(ano)][mes])) if D["leads_totais"][str(ano)][mes] else 0,
+            "invest": int(mp_mes), "leads": int(D["leads_totais"][str(ano)][mes]),
             "visitas": int(vis_mes), "mes_ref": f"{mes}/{ano}", "obs_grupos": obs}
 
     j = lambda o: json.dumps(o, ensure_ascii=False)
